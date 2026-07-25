@@ -23,28 +23,28 @@ const FEATURES_PRO = [
 
 export default function UpgradePage() {
   const { user, profile } = useAuth()
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(null) // 'now' | 'trial' | null
   const [error,   setError]   = useState('')
 
-  async function handleUpgrade() {
-    setLoading(true)
+  async function handleUpgrade(trial = false) {
+    setLoading(trial ? 'trial' : 'now')
     setError('')
     try {
       const res = await fetch('/api/create-checkout-session', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ userId: user.id, userEmail: user.email }),
+        body:    JSON.stringify({ userId: user.id, userEmail: user.email, trial }),
       })
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
       } else {
         setError(data.error || 'Грешка при създаване на сесия')
-        setLoading(false)
+        setLoading(null)
       }
     } catch (e) {
       setError(e.message)
-      setLoading(false)
+      setLoading(null)
     }
   }
   const isPro = profile?.plan === 'pro'
@@ -86,16 +86,25 @@ export default function UpgradePage() {
           </div>
           <div className="text-indigo-200 text-xs mb-5">или €24.99/година (2 месеца безплатно)</div>
           <button
-            onClick={handleUpgrade}
-            disabled={loading}
+            onClick={() => handleUpgrade(false)}
+            disabled={!!loading}
             className="w-full py-3.5 rounded-xl font-bold text-indigo-700 bg-white
                        hover:bg-indigo-50 active:scale-[.98] transition-all text-sm shadow-lg
                        disabled:opacity-70"
           >
-            {loading ? '⏳ Пренасочване към Stripe...' : '⚡ Надградете сега'}
+            {loading === 'now' ? '⏳ Пренасочване...' : '⚡ Надградете сега'}
+          </button>
+          <button
+            onClick={() => handleUpgrade(true)}
+            disabled={!!loading}
+            className="w-full py-3 rounded-xl font-semibold text-white/90 border border-white/40
+                       hover:bg-white/10 active:scale-[.98] transition-all text-sm
+                       disabled:opacity-70"
+          >
+            {loading === 'trial' ? '⏳ Пренасочване...' : '🎁 Тествайте 3 дни безплатно'}
           </button>
           {error && <p className="text-red-300 text-xs mt-2">{error}</p>}
-          <p className="text-xs text-indigo-200 mt-3">Отказ по всяко време · Без скрити такси · За цената на кафе</p>
+          <p className="text-xs text-indigo-200 mt-2">Отказ по всяко време · Без скрити такси · За цената на кафе</p>
         </div>
 
         {/* Feature comparison */}

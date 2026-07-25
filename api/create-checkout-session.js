@@ -6,7 +6,7 @@ const APP_URL = 'https://stroykalc.vercel.app'
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { userId, userEmail } = req.body
+  const { userId, userEmail, trial } = req.body
   if (!userId) return res.status(400).json({ error: 'Missing userId' })
 
   try {
@@ -17,6 +17,7 @@ export default async function handler(req, res) {
       customer_email: userEmail,
       client_reference_id: userId,
       metadata: { userId },
+      ...(trial ? { subscription_data: { trial_period_days: 3 } } : {}),
       success_url: `${APP_URL}?upgraded=true`,
       cancel_url:  `${APP_URL}`,
       locale: 'bg',
