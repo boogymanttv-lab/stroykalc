@@ -169,6 +169,15 @@ function AppInner() {
             <p className="text-xs text-white/70 truncate max-w-[175px]">{displayName}</p>
           </div>
           <div className="flex items-center gap-3">
+            {user?.email === ADMIN_EMAIL && (
+              <button
+                onClick={() => setTab('admin')}
+                className={`text-base transition-opacity ${tab === 'admin' ? 'opacity-100' : 'opacity-60'}`}
+                title="Админ"
+              >
+                🛡️
+              </button>
+            )}
             <button
               onClick={() => setTab('settings')}
               className={`text-base transition-opacity ${tab === 'settings' ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
