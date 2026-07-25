@@ -10,7 +10,10 @@ import Calculator from './components/Calculator'
 import OverdueAlert from './components/OverdueAlert'
 import SyncStatus from './components/SyncStatus'
 import UpgradePage from './pages/UpgradePage'
+import AdminPage from './pages/AdminPage'
 import { syncDown } from './lib/syncService'
+
+const ADMIN_EMAIL = 'wellecfx@gmail.com'
 
 const TABS = [
   { id: 'calc',     icon: '🧮', label: 'Калкулатор' },
@@ -130,6 +133,15 @@ function AppInner() {
         </nav>
 
         <div className="px-5 py-4 border-t border-white/20 space-y-2">
+          {user?.email === ADMIN_EMAIL && (
+            <button
+              onClick={() => setTab('admin')}
+              className={`flex items-center gap-2 w-full text-xs font-medium transition-colors
+                          ${tab === 'admin' ? 'text-white' : 'text-white/50 hover:text-white'}`}
+            >
+              🛡️ Админ панел
+            </button>
+          )}
           <button
             onClick={() => setTab('settings')}
             className={`flex items-center gap-2 w-full text-xs font-medium transition-colors
@@ -201,7 +213,8 @@ function AppInner() {
           {tab === 'projects' && <ProjectsPage onEdit={openProject} onNew={newProject} onGoUpgrade={() => setTab('upgrade')} />}
           {tab === 'clients'  && <ClientsPage />}
           {tab === 'reports'  && <ReportsGate profile={profile} onGoUpgrade={() => setTab('upgrade')} />}
-          {tab === 'upgrade'  && <UpgradePage onUpgrade={() => alert('Stripe интеграцията идва скоро!')} />}
+          {tab === 'upgrade'  && <UpgradePage />}
+          {tab === 'admin'    && user?.email === ADMIN_EMAIL && <AdminPage />}
           {tab === 'settings' && <SettingsPage />}
         </main>
 
