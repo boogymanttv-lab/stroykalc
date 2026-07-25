@@ -1,7 +1,7 @@
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-const APP_URL = 'https://stroykalc.vercel.app'
+const APP_URL = 'https://maistorix.com'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()

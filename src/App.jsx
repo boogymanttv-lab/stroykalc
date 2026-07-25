@@ -104,7 +104,7 @@ function AppInner() {
       <aside className="hidden md:flex flex-col w-56 flex-shrink-0
                         bg-gradient-to-b from-indigo-600 to-violet-700 text-white">
         <div className="px-5 pt-6 pb-5 border-b border-white/20">
-          <h1 className="text-xl font-black tracking-tight">🏗️ СтройКалк</h1>
+          <h1 className="text-xl font-black tracking-tight">🏗️ Maistorix</h1>
           <p className="text-xs text-white/60 mt-1 truncate">{displayName}</p>
         </div>
 
@@ -165,7 +165,7 @@ function AppInner() {
         <header className="md:hidden bg-gradient-to-r from-indigo-600 to-violet-700
                            text-white px-4 py-3 flex-shrink-0 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-black">🏗️ СтройКалк</h1>
+            <h1 className="text-lg font-black">🏗️ Maistorix</h1>
             <p className="text-xs text-white/70 truncate max-w-[175px]">{displayName}</p>
           </div>
           <div className="flex items-center gap-3">

@@ -79,7 +79,7 @@ export default function UpgradePage() {
 
         {/* Pricing card */}
         <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white text-center shadow-xl">
-          <div className="text-sm font-semibold text-indigo-200 mb-1">СтройКалк PRO</div>
+          <div className="text-sm font-semibold text-indigo-200 mb-1">Maistorix PRO</div>
           <div className="flex items-end justify-center gap-1 mb-1">
             <span className="text-5xl font-black">€2.99</span>
             <span className="text-indigo-200 mb-2">/месец</span>
@@ -142,7 +142,7 @@ export default function UpgradePage() {
             „Изпълнител с 3 проекта по €3,000 прави €9,000 на месец.
             €2.99 за инструмента е буквално по-малко от едно кафе."
           </p>
-          <p className="text-xs text-amber-600 mt-2 font-semibold">— Екипът на СтройКалк</p>
+          <p className="text-xs text-amber-600 mt-2 font-semibold">— Екипът на Maistorix</p>
         </div>
 
       </div>

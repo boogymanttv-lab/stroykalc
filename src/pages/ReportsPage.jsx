@@ -104,7 +104,7 @@ export default function ReportsPage() {
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href     = url
-    a.download = `СтройКалк_Отчет_${new Date().toLocaleDateString('bg-BG')}.csv`
+    a.download = `Maistorix_Отчет_${new Date().toLocaleDateString('bg-BG')}.csv`
     a.click()
     URL.revokeObjectURL(url)
   }

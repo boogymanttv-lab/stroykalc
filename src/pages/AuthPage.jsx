@@ -64,7 +64,7 @@ export default function AuthPage() {
       {/* Logo */}
       <div className="text-center mb-8">
         <div className="text-4xl mb-2">🏗️</div>
-        <h1 className="text-2xl font-black text-slate-800">СтройКалк</h1>
+        <h1 className="text-2xl font-black text-slate-800">Maistorix</h1>
         <p className="text-slate-400 text-sm mt-1">Калкулатор за ремонти и строителство</p>
       </div>
 

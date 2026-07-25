@@ -91,7 +91,7 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
         ? `<img src="${profile.logo_url}" class="logo" alt="logo" />`
         : `<div class="logo-ph">🏗️</div>`}
       <div>
-        <div class="company-name">${profile?.company_name || profile?.full_name || 'СтройКалк'}</div>
+        <div class="company-name">${profile?.company_name || profile?.full_name || 'Maistorix'}</div>
         ${profile?.phone       ? `<div class="company-det">📞 ${profile.phone}</div>` : ''}
         ${profile?.email       ? `<div class="company-det">✉️ ${profile.email}</div>` : ''}
         ${(profile?.address || profile?.city) ? `<div class="company-det">📍 ${[profile?.address, profile?.city].filter(Boolean).join(', ')}</div>` : ''}
@@ -182,9 +182,9 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
   <div style="margin-top:18px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;
               border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
     <span style="font-size:10.5px;color:#94a3b8;">
-      🏗️ Създадено безплатно с <strong style="color:#4f46e5;">СтройКалк</strong>
+      🏗️ Създадено безплатно с <strong style="color:#4f46e5;">Maistorix</strong>
     </span>
-    <span style="font-size:10px;color:#c7d2fe;">stroykalc.vercel.app</span>
+    <span style="font-size:10px;color:#c7d2fe;">maistorix.com</span>
   </div>` : ''}
 
 </div>

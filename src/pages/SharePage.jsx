@@ -74,7 +74,7 @@ export default function SharePage({ token }) {
     return acc
   }, {})
 
-  const companyName = profile?.company_name || profile?.full_name || 'СтройКалк'
+  const companyName = profile?.company_name || profile?.full_name || 'Maistorix'
 
   return (
     <div className="min-h-screen bg-slate-50">

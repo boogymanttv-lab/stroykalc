@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'СтройКалк',
-        short_name: 'СтройКалк',
+        name: 'Maistorix',
+        short_name: 'Maistorix',
         description: 'Калкулатор за строителство и ремонти',
         theme_color: '#4f46e5',
         background_color: '#ffffff',
