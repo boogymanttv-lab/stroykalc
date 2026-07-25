@@ -56,10 +56,10 @@ export default function UpgradePage({ onUpgrade }) {
         <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white text-center shadow-xl">
           <div className="text-sm font-semibold text-indigo-200 mb-1">СтройКалк PRO</div>
           <div className="flex items-end justify-center gap-1 mb-1">
-            <span className="text-5xl font-black">€9.99</span>
+            <span className="text-5xl font-black">€2.99</span>
             <span className="text-indigo-200 mb-2">/месец</span>
           </div>
-          <div className="text-indigo-200 text-xs mb-5">или €79/година (2 месеца безплатно)</div>
+          <div className="text-indigo-200 text-xs mb-5">или €24.99/година (2 месеца безплатно)</div>
           <button
             onClick={onUpgrade}
             className="w-full py-3.5 rounded-xl font-bold text-indigo-700 bg-white
@@ -67,7 +67,7 @@ export default function UpgradePage({ onUpgrade }) {
           >
             ⚡ Надградете сега
           </button>
-          <p className="text-xs text-indigo-200 mt-3">Отказ по всяко време · Без скрити такси</p>
+          <p className="text-xs text-indigo-200 mt-3">Отказ по всяко време · Без скрити такси · За цената на кафе</p>
         </div>
 
         {/* Feature comparison */}
@@ -103,7 +103,7 @@ export default function UpgradePage({ onUpgrade }) {
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
           <p className="text-sm text-amber-800 italic">
             „Изпълнител с 3 проекта по €3,000 прави €9,000 на месец.
-            €9.99 за инструмента е нищо в сравнение с времето и имиджа, което спестява."
+            €2.99 за инструмента е буквално по-малко от едно кафе."
           </p>
           <p className="text-xs text-amber-600 mt-2 font-semibold">— Екипът на СтройКалк</p>
         </div>

@@ -181,9 +181,9 @@ function AppInner() {
           <SyncStatus onOnline={() => syncDown(user.id)} />
           <OverdueAlert onGoToProject={id => { openProject(id) }} />
           {tab === 'calc'     && <Calculator key={calcKey} editProjectId={editProjectId} />}
-          {tab === 'projects' && <ProjectsPage onEdit={openProject} onNew={newProject} />}
+          {tab === 'projects' && <ProjectsPage onEdit={openProject} onNew={newProject} onGoUpgrade={() => setTab('upgrade')} />}
           {tab === 'clients'  && <ClientsPage />}
-          {tab === 'reports'  && <ReportsPage />}
+          {tab === 'reports'  && <ReportsGate profile={profile} onGoUpgrade={() => setTab('upgrade')} />}
           {tab === 'upgrade'  && <UpgradePage onUpgrade={() => alert('Stripe интеграцията идва скоро!')} />}
           {tab === 'settings' && <SettingsPage />}
         </main>
@@ -210,6 +210,27 @@ function AppInner() {
           ))}
         </nav>
       </div>
+    </div>
+  )
+}
+
+function ReportsGate({ profile, onGoUpgrade }) {
+  if (profile?.plan === 'pro') return <ReportsPage />
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+      <div className="text-6xl mb-4">📊</div>
+      <h2 className="text-xl font-bold text-slate-700 mb-2">Отчети — PRO функция</h2>
+      <p className="text-slate-400 text-sm max-w-xs mb-6">
+        Пълни отчети, приходи по месеци, CSV/Excel експорт — достъпни с PRO план.
+      </p>
+      <button
+        onClick={onGoUpgrade}
+        className="px-6 py-3 rounded-xl font-bold text-white text-sm
+                   bg-gradient-to-r from-indigo-600 to-violet-700
+                   hover:opacity-90 active:scale-[.98] transition-all shadow-sm"
+      >
+        ⚡ Надградете за €2.99/месец
+      </button>
     </div>
   )
 }
