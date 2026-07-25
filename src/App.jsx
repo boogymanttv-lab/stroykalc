@@ -29,7 +29,7 @@ export default function App() {
 }
 
 function AppInner() {
-  const { user, profile, loading, signOut } = useAuth()
+  const { user, profile, loading, signOut, refreshProfile } = useAuth()
   const [tab, setTab] = useState('calc')
 
   // ── Share / Client portal route ──
@@ -46,6 +46,18 @@ function AppInner() {
   useEffect(() => {
     if (user) syncDown(user.id)
   }, [user])
+
+  // Handle Stripe redirect back after payment
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false)
+  useEffect(() => {
+    if (window.location.search.includes('upgraded=true')) {
+      refreshProfile()
+      setTab('upgrade')
+      setUpgradeSuccess(true)
+      window.history.replaceState({}, '', window.location.pathname)
+      setTimeout(() => setUpgradeSuccess(false), 6000)
+    }
+  }, [])
 
   if (loading) {
     return (
@@ -179,6 +191,11 @@ function AppInner() {
         {/* Views */}
         <main className="flex-1 overflow-hidden flex flex-col">
           <SyncStatus onOnline={() => syncDown(user.id)} />
+          {upgradeSuccess && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold animate-pulse">
+              🎉 Добре дошли в PRO! Всички функции са отключени.
+            </div>
+          )}
           <OverdueAlert onGoToProject={id => { openProject(id) }} />
           {tab === 'calc'     && <Calculator key={calcKey} editProjectId={editProjectId} />}
           {tab === 'projects' && <ProjectsPage onEdit={openProject} onNew={newProject} onGoUpgrade={() => setTab('upgrade')} />}

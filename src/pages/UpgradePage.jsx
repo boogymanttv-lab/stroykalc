@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 const FEATURES_FREE = [
@@ -20,8 +21,32 @@ const FEATURES_PRO = [
   'Приоритетна поддръжка',
 ]
 
-export default function UpgradePage({ onUpgrade }) {
-  const { profile } = useAuth()
+export default function UpgradePage() {
+  const { user, profile } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
+
+  async function handleUpgrade() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ userId: user.id, userEmail: user.email }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setError(data.error || 'Грешка при създаване на сесия')
+        setLoading(false)
+      }
+    } catch (e) {
+      setError(e.message)
+      setLoading(false)
+    }
+  }
   const isPro = profile?.plan === 'pro'
 
   if (isPro) {
@@ -61,12 +86,15 @@ export default function UpgradePage({ onUpgrade }) {
           </div>
           <div className="text-indigo-200 text-xs mb-5">или €24.99/година (2 месеца безплатно)</div>
           <button
-            onClick={onUpgrade}
+            onClick={handleUpgrade}
+            disabled={loading}
             className="w-full py-3.5 rounded-xl font-bold text-indigo-700 bg-white
-                       hover:bg-indigo-50 active:scale-[.98] transition-all text-sm shadow-lg"
+                       hover:bg-indigo-50 active:scale-[.98] transition-all text-sm shadow-lg
+                       disabled:opacity-70"
           >
-            ⚡ Надградете сега
+            {loading ? '⏳ Пренасочване към Stripe...' : '⚡ Надградете сега'}
           </button>
+          {error && <p className="text-red-300 text-xs mt-2">{error}</p>}
           <p className="text-xs text-indigo-200 mt-3">Отказ по всяко време · Без скрити такси · За цената на кафе</p>
         </div>
 
