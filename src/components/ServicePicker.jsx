@@ -126,7 +126,7 @@ export default function ServicePicker({ onAdd, onClose }) {
 
       {/* ── DESKTOP: centered modal with sidebar ── */}
       <div className="hidden md:flex bg-white rounded-2xl shadow-2xl overflow-hidden"
-           style={{ width: '780px', height: '560px' }}>
+           style={{ width: '960px', height: '680px' }}>
 
         {/* Left sidebar */}
         <div className="w-48 flex-shrink-0 border-r border-slate-100 flex flex-col bg-slate-50 overflow-y-auto">
