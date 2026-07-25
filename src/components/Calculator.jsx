@@ -128,6 +128,7 @@ export default function Calculator({ editProjectId }) {
     generateOfferPDF({
       profile,
       client: clientData,
+      isPro: profile?.plan === 'pro',
       project: {
         name: projectName || 'Проект', address: projectAddress, notes, items,
         subtotal, vat: vatOn, vat_amount: vatAmt, total,

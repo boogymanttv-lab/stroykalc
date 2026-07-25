@@ -1,7 +1,7 @@
 const fmt = n =>
   '€ ' + Number(n).toLocaleString('bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-export function generateOfferPDF({ profile, client, project, shareUrl }) {
+export function generateOfferPDF({ profile, client, project, shareUrl, isPro = false }) {
   // Group items by category
   const grouped = {}
   for (const item of (project.items || [])) {
@@ -176,6 +176,16 @@ export function generateOfferPDF({ profile, client, project, shareUrl }) {
 
   <!-- Footer note -->
   ${profile?.offer_footer ? `<div class="footer-note">${profile.offer_footer}</div>` : ''}
+
+  <!-- Watermark for free plan -->
+  ${!isPro ? `
+  <div style="margin-top:18px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;
+              border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="font-size:10.5px;color:#94a3b8;">
+      🏗️ Създадено безплатно с <strong style="color:#4f46e5;">СтройКалк</strong>
+    </span>
+    <span style="font-size:10px;color:#c7d2fe;">stroykalc.vercel.app</span>
+  </div>` : ''}
 
 </div>
 <script>window.onload = () => { window.focus(); window.print(); }</script>

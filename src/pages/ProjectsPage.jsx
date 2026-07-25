@@ -141,6 +141,7 @@ export default function ProjectsPage({ onEdit, onNew }) {
     generateOfferPDF({
       profile, client,
       shareUrl,
+      isPro: profile?.plan === 'pro',
       project: {
         ...p,
         offer_date: p.offer_date

@@ -9,6 +9,7 @@ import SharePage from './pages/SharePage'
 import Calculator from './components/Calculator'
 import OverdueAlert from './components/OverdueAlert'
 import SyncStatus from './components/SyncStatus'
+import UpgradePage from './pages/UpgradePage'
 import { syncDown } from './lib/syncService'
 
 const TABS = [
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'projects', icon: '📁', label: 'Проекти'    },
   { id: 'clients',  icon: '👥', label: 'Клиенти'    },
   { id: 'reports',  icon: '📊', label: 'Отчети'     },
+  { id: 'upgrade',  icon: '⚡', label: 'PRO'        },
 ]
 
 export default function App() {
@@ -98,12 +100,19 @@ function AppInner() {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-3 w-full px-5 py-3 text-sm font-medium
                           border-l-4 transition-all
-                          ${tab === t.id
-                            ? 'border-white bg-white/15 text-white'
-                            : 'border-transparent text-white/60 hover:bg-white/8 hover:text-white'}`}
+                          ${t.id === 'upgrade'
+                            ? tab === 'upgrade'
+                              ? 'border-amber-400 bg-amber-400/20 text-amber-300'
+                              : 'border-transparent text-amber-300/80 hover:bg-amber-400/10 hover:text-amber-300'
+                            : tab === t.id
+                              ? 'border-white bg-white/15 text-white'
+                              : 'border-transparent text-white/60 hover:bg-white/8 hover:text-white'}`}
             >
               <span className="text-lg">{t.icon}</span>
               {t.label}
+              {t.id === 'upgrade' && profile?.plan !== 'pro' && (
+                <span className="ml-auto text-[9px] bg-amber-400 text-amber-900 font-black px-1.5 py-0.5 rounded-full">NEW</span>
+              )}
             </button>
           ))}
         </nav>
@@ -175,6 +184,7 @@ function AppInner() {
           {tab === 'projects' && <ProjectsPage onEdit={openProject} onNew={newProject} />}
           {tab === 'clients'  && <ClientsPage />}
           {tab === 'reports'  && <ReportsPage />}
+          {tab === 'upgrade'  && <UpgradePage onUpgrade={() => alert('Stripe интеграцията идва скоро!')} />}
           {tab === 'settings' && <SettingsPage />}
         </main>
 
@@ -186,9 +196,13 @@ function AppInner() {
               onClick={() => setTab(t.id)}
               className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold
                           border-t-2 transition-colors
-                          ${tab === t.id
-                            ? 'border-indigo-600 text-indigo-600'
-                            : 'border-transparent text-slate-400'}`}
+                          ${t.id === 'upgrade'
+                            ? tab === 'upgrade'
+                              ? 'border-amber-400 text-amber-500'
+                              : 'border-transparent text-amber-400'
+                            : tab === t.id
+                              ? 'border-indigo-600 text-indigo-600'
+                              : 'border-transparent text-slate-400'}`}
             >
               <span className="text-xl leading-none">{t.icon}</span>
               {t.label}
