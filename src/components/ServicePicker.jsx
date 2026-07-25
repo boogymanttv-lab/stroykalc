@@ -80,20 +80,23 @@ export default function ServicePicker({ onAdd, onClose }) {
                     </span>
                     <span className="text-slate-400 text-xs">{openGroup === group ? '▲' : '▼'}</span>
                   </button>
-                  {/* Category chips inside group */}
+                  {/* Category list inside group */}
                   {openGroup === group && (
-                    <div className="flex flex-wrap gap-1.5 px-4 py-2.5">
+                    <div className="py-1">
                       {SERVICES.filter(s => s.group === group).map(s => (
                         <button
                           key={s.id}
                           onClick={() => { setCatId(s.id); setExpandedId(null) }}
-                          className="px-2.5 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap"
+                          className="flex items-center gap-3 w-full px-5 py-2.5 text-sm text-left transition-all border-l-2"
                           style={{
-                            background: s.id === catId ? s.color : '#f1f5f9',
-                            color: s.id === catId ? 'white' : s.color,
+                            borderLeftColor: s.id === catId ? s.color : 'transparent',
+                            background: s.id === catId ? '#f8faff' : 'transparent',
+                            color: s.id === catId ? s.color : '#64748b',
+                            fontWeight: s.id === catId ? 600 : 400,
                           }}
                         >
-                          {s.icon} {s.name}
+                          <span>{s.icon}</span>
+                          <span>{s.name}</span>
                         </button>
                       ))}
                     </div>
@@ -126,7 +129,7 @@ export default function ServicePicker({ onAdd, onClose }) {
 
       {/* ── DESKTOP: centered modal with sidebar ── */}
       <div className="hidden md:flex bg-white rounded-2xl shadow-2xl overflow-hidden"
-           style={{ width: '960px', height: '680px' }}>
+           style={{ width: 'min(1100px, 92vw)', height: 'min(760px, 88vh)' }}>
 
         {/* Left sidebar */}
         <div className="w-48 flex-shrink-0 border-r border-slate-100 flex flex-col bg-slate-50 overflow-y-auto">
