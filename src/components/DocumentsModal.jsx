@@ -28,8 +28,19 @@ export default function DocumentsModal({ project, onClose }) {
     setDeleting(null)
   }
 
-  function openDoc(doc) {
-    window.open(doc.url, '_blank')
+  async function openDoc(doc) {
+    try {
+      const res  = await fetch(doc.url)
+      const text = await res.text()
+      const blob = new Blob([text], { type: 'text/html;charset=utf-8' })
+      const url  = URL.createObjectURL(blob)
+      const win  = window.open(url, '_blank')
+      // Освобождаваме blob URL след 60 сек (достатъчно за зареждане)
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      if (!win) alert('Разрешете pop-up-ите за maistorix.com')
+    } catch {
+      window.open(doc.url, '_blank')
+    }
   }
 
   return (
