@@ -47,15 +47,23 @@ export default function ReportsPage() {
       setPayments(pays || [])
       setExpenses(exps || [])
     } else {
-      // Offline — read from IndexedDB
-      const [proj, pays, exps] = await Promise.all([
-        db.projects.where('user_id').equals(user.id).toArray(),
-        db.payments.where('user_id').equals(user.id).toArray(),
-        db.expenses.where('user_id').equals(user.id).toArray(),
-      ])
-      setProjects(proj.map(p => ({ ...p, clients: p._client_name ? { name: p._client_name } : null })))
-      setPayments(pays.sort((a, b) => new Date(a.paid_at) - new Date(b.paid_at)))
-      setExpenses(exps)
+      // Offline — read from IndexedDB with fallback
+      try {
+        let proj = await db.projects.where('user_id').equals(user.id).toArray()
+        if (!proj.length) proj = await db.projects.toArray()
+
+        let pays = await db.payments.where('user_id').equals(user.id).toArray()
+        if (!pays.length) pays = await db.payments.toArray()
+
+        let exps = await db.expenses.where('user_id').equals(user.id).toArray()
+        if (!exps.length) exps = await db.expenses.toArray()
+
+        setProjects(proj.map(p => ({ ...p, clients: p._client_name ? { name: p._client_name } : null })))
+        setPayments(pays.sort((a, b) => new Date(a.paid_at) - new Date(b.paid_at)))
+        setExpenses(exps)
+      } catch (e) {
+        console.warn('[offline] ReportsPage read failed', e)
+      }
     }
     setLoading(false)
   }
