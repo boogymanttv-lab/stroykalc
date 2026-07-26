@@ -1,67 +1,129 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 const GUIDED_KEY = 'maistorix_guided_done'
 
+// waitFor:
+//   'manual' — user clicks "Следващо" button
+//   'click'  — auto-advance when spotlight element is clicked
 const STEPS = [
   {
-    tab:     'clients',
+    id:      'welcome',
+    tab:     null,
     target:  null,
-    title:   '👥 Стъпка 1 — Добави клиент',
-    text:    'Натисни бутона „+ Нов клиент" и попълни името, телефона и адреса. Клиентите се запазват и после ги избираш в калкулатора.',
-    tip:     '💡 Натисни „+ Нов клиент" горе вдясно',
-    position: 'center',
+    title:   '👋 Здравей! Нека те преведем.',
+    text:    'Ще извършиш реални действия в приложението — ние ти показваме какво да направиш на всяка стъпка.',
+    waitFor: 'manual',
+    btn:     'Да, започваме! →',
   },
   {
-    tab:     'clients',
-    target:  null,
-    title:   '✅ Клиентът е запазен!',
-    text:    'Сега отиваме в Калкулатора, където ще създадем оферта за него.',
-    position: 'center',
+    id:      'go-settings',
+    tab:     null,
+    target:  '[data-tour="settings-btn"]',
+    title:   '⚙️ Стъпка 1 — Фирмен профил',
+    text:    'Натисни „⚙️ Фирмен профил" за да попълниш данните на фирмата си.',
+    waitFor: 'click',
   },
   {
+    id:      'fill-settings',
+    tab:     'settings',
+    target:  null,
+    title:   '📝 Попълни данните на фирмата',
+    text:    'Въведи името на фирмата, телефон и адрес. Тези данни ще се появяват автоматично в офертите. Натисни „Запази" и след това „Следващо".',
+    waitFor: 'manual',
+    tip:     '💡 Натисни „Запази" след като попълниш',
+  },
+  {
+    id:      'go-clients',
+    tab:     null,
+    target:  '[data-tour="clients-tab"]',
+    title:   '👥 Стъпка 2 — Клиенти',
+    text:    'Натисни „👥 Клиенти" за да добавиш първия си клиент.',
+    waitFor: 'click',
+  },
+  {
+    id:      'new-client',
+    tab:     'clients',
+    target:  '[data-tour="new-client-btn"]',
+    title:   '➕ Добави нов клиент',
+    text:    'Натисни „+ Нов клиент" за да отвориш формата.',
+    waitFor: 'click',
+  },
+  {
+    id:      'fill-client',
+    tab:     'clients',
+    target:  null,
+    title:   '📋 Попълни данните на клиента',
+    text:    'Въведи име, телефон и адрес на клиента. Натисни „Запази" след което се върни тук.',
+    waitFor: 'manual',
+    tip:     '💡 Натисни „Запази" в модалния прозорец',
+  },
+  {
+    id:      'go-calc',
+    tab:     null,
+    target:  '[data-tour="calc-tab"]',
+    title:   '🧮 Стъпка 3 — Калкулатор',
+    text:    'Натисни „🧮 Калкулатор" за да създадеш оферта за клиента.',
+    waitFor: 'click',
+  },
+  {
+    id:      'select-client',
     tab:     'calc',
     target:  null,
-    title:   '🧮 Стъпка 2 — Калкулатор',
-    text:    'Тук създаваш оферти. Първо избери клиента от полето „Клиент" — ще видиш клиента когото добави.',
-    tip:     '💡 Избери клиента от падащото меню',
-    position: 'center',
+    title:   '👤 Избери клиента',
+    text:    'В полето „Клиент" избери клиента когото добави. Така офертата ще е свързана с него.',
+    waitFor: 'manual',
+    tip:     '💡 Натисни полето „Клиент" и избери от списъка',
   },
   {
+    id:      'add-service',
     tab:     'calc',
     target:  '[data-tour="add-service-btn"]',
-    title:   '➕ Стъпка 3 — Добави услуги',
-    text:    'Натисни „+ Добави услуга", избери категория (например Зидария), после избери конкретна услуга, въведи количество и натисни „+ Добави".',
-    tip:     '💡 Добави 2-3 услуги за да видиш как изглежда офертата',
-    position: 'top',
+    title:   '➕ Добави услуга',
+    text:    'Натисни „+ Добави услуга" за да отвориш каталога с услуги.',
+    waitFor: 'click',
   },
   {
+    id:      'pick-service',
     tab:     'calc',
     target:  null,
-    title:   '💾 Стъпка 4 — Запази проекта',
-    text:    'Когато добавиш услугите, въведи заглавие на проекта и натисни „Запази оферта". Проектът се запазва автоматично.',
-    tip:     '💡 Натисни „Запази оферта" в долната част',
-    position: 'center',
+    title:   '🔧 Избери услуга от каталога',
+    text:    'Избери категория (напр. Зидария), натисни услуга, въведи количество и натисни „+ Добави". Добави 2-3 услуги.',
+    waitFor: 'manual',
+    tip:     '💡 Затвори каталога след като добавиш услугите',
   },
   {
+    id:      'save-project',
+    tab:     'calc',
+    target:  null,
+    title:   '💾 Запази проекта',
+    text:    'Въведи заглавие на проекта и натисни „Запази оферта". Проектът ще се появи в секция Проекти.',
+    waitFor: 'manual',
+    tip:     '💡 Натисни „Запази оферта" в долната част на страницата',
+  },
+  {
+    id:      'go-projects',
+    tab:     null,
+    target:  '[data-tour="projects-tab"]',
+    title:   '📁 Стъпка 4 — Проекти',
+    text:    'Натисни „📁 Проекти" за да видиш запазения проект.',
+    waitFor: 'click',
+  },
+  {
+    id:      'show-project-options',
     tab:     'projects',
     target:  null,
-    title:   '📁 Стъпка 5 — Проекти',
-    text:    'Тук виждаш всички запазени проекти. Натисни върху проекта за да видиш опциите.',
-    position: 'center',
+    title:   '🎛️ Опции на проекта',
+    text:    'Натисни върху проекта за да видиш:\n\n📄 Оферта — PDF за клиента\n💰 Плащания — следи плащанията\n📋 Задачи — работни задачи\n📸 Снимки — от обекта\n🔗 Сподели — клиентски портал',
+    waitFor: 'manual',
   },
   {
-    tab:     'projects',
-    target:  null,
-    title:   '🎛️ Какво можеш да правиш с проект',
-    text:    '• 📄 Оферта — генерира PDF за клиента\n• 💰 Плащания — следи кое е платено\n• 📋 Задачи — списък с работи\n• 📸 Снимки — прикачи снимки от обекта\n• 📑 Договор — генерира договор (PRO)\n• 🔗 Сподели — клиентски портал с QR',
-    position: 'center',
-  },
-  {
+    id:      'done',
     tab:     null,
     target:  null,
     title:   '🎉 Готов си!',
-    text:    'Вече знаеш как работи Maistorix. Създай реална оферта за твой клиент и я изпрати като PDF!',
-    position: 'center',
+    text:    'Вече знаеш как работи Maistorix. Създай реална оферта и я изпрати на клиент като PDF!',
+    waitFor: 'manual',
+    btn:     '🚀 Да започваме!',
   },
 ]
 
@@ -72,26 +134,52 @@ export default function GuidedTour({ setTab, onDone }) {
 
   useEffect(() => {
     if (localStorage.getItem(GUIDED_KEY)) { onDone?.(); return }
-    setTimeout(() => setVisible(true), 400)
+    setTimeout(() => setVisible(true), 500)
   }, [])
 
+  // Update spotlight rect when step changes
   useEffect(() => {
     if (!visible) return
     const s = STEPS[step]
-    // Navigate to tab
     if (s.tab) setTab(s.tab)
-    // Find target element
+
     if (!s.target) { setRect(null); return }
-    const timer = setTimeout(() => {
+
+    // Try to find element (retry a few times for tabs that need render)
+    let attempts = 0
+    const tryFind = () => {
       const el = document.querySelector(s.target)
-      if (el) setRect(el.getBoundingClientRect())
-    }, 400)
-    return () => clearTimeout(timer)
+      if (el) {
+        setRect(el.getBoundingClientRect())
+      } else if (attempts < 5) {
+        attempts++
+        setTimeout(tryFind, 200)
+      } else {
+        setRect(null)
+      }
+    }
+    setTimeout(tryFind, 300)
   }, [step, visible])
 
-  function next() {
+  // Auto-advance on click for 'click' steps
+  useEffect(() => {
+    if (!visible) return
+    const s = STEPS[step]
+    if (s.waitFor !== 'click' || !s.target) return
+
+    const el = document.querySelector(s.target)
+    if (!el) return
+
+    const handler = () => {
+      setTimeout(() => advance(), 400) // small delay so navigation happens first
+    }
+    el.addEventListener('click', handler)
+    return () => el.removeEventListener('click', handler)
+  }, [step, visible, rect])
+
+  function advance() {
+    setRect(null)
     if (step < STEPS.length - 1) {
-      setRect(null)
       setStep(s => s + 1)
     } else {
       finish()
@@ -106,87 +194,131 @@ export default function GuidedTour({ setTab, onDone }) {
 
   if (!visible) return null
 
-  const s = STEPS[step]
+  const s      = STEPS[step]
   const isLast = step === STEPS.length - 1
+  const pad    = 8
 
-  const cardStyle = {
-    position: 'fixed',
-    zIndex: 10001,
-    width: 300,
+  // Tooltip position — always outside spotlight, clamped to viewport
+  const CARD_W = 280
+  const CARD_H = 220
+
+  const getCardStyle = () => {
+    if (!rect) return {
+      position: 'fixed',
+      top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 10002,
+      width: CARD_W,
+    }
+    const spaceRight  = window.innerWidth  - rect.right  - pad
+    const spaceBottom = window.innerHeight - rect.bottom - pad
+    const spaceLeft   = rect.left - pad
+    const spaceTop    = rect.top  - pad
+
+    let top, left
+
+    if (spaceRight >= CARD_W + 10) {
+      // Right of spotlight
+      left = rect.right + pad
+      top  = Math.max(pad, Math.min(rect.top, window.innerHeight - CARD_H - pad))
+    } else if (spaceBottom >= CARD_H + 10) {
+      // Below spotlight
+      top  = rect.bottom + pad
+      left = Math.max(pad, Math.min(rect.left, window.innerWidth - CARD_W - pad))
+    } else if (spaceTop >= CARD_H + 10) {
+      // Above spotlight
+      top  = rect.top - CARD_H - pad
+      left = Math.max(pad, Math.min(rect.left, window.innerWidth - CARD_W - pad))
+    } else {
+      // Left of spotlight
+      left = rect.left - CARD_W - pad
+      top  = Math.max(pad, Math.min(rect.top, window.innerHeight - CARD_H - pad))
+    }
+
+    return { position: 'fixed', top, left, zIndex: 10002, width: CARD_W }
   }
 
-  if (rect) {
-    // Position near target element
-    const pad = 12
-    const fitsBelow = rect.bottom + pad + 240 < window.innerHeight
-    cardStyle.top  = fitsBelow ? rect.bottom + pad : rect.top - 240 - pad
-    cardStyle.left = Math.max(12, Math.min(rect.left, window.innerWidth - 312))
-  } else {
-    // Center
-    cardStyle.top       = '50%'
-    cardStyle.left      = '50%'
-    cardStyle.transform = 'translate(-50%, -50%)'
-  }
+  const BG = 'rgba(0,0,0,0.65)'
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0"
-        style={{ zIndex: 10000, background: 'rgba(0,0,0,0.6)' }}
-        onClick={finish}
-      />
-
-      {/* Spotlight */}
-      {rect && (
-        <div style={{
-          position: 'fixed',
-          top: rect.top - 6, left: rect.left - 6,
-          width: rect.width + 12, height: rect.height + 12,
-          borderRadius: 10,
-          boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
-          border: '2px solid rgba(255,255,255,0.4)',
-          zIndex: 10000,
-          pointerEvents: 'none',
-        }} />
+      {/* 4-rectangle overlay — spotlight area stays clickable */}
+      {rect ? (
+        <>
+          <div style={{ position:'fixed', inset:0, top:0, left:0, right:0, height: Math.max(0, rect.top - pad), background: BG, zIndex:10000 }} />
+          <div style={{ position:'fixed', top: rect.bottom + pad, left:0, right:0, bottom:0, background: BG, zIndex:10000 }} />
+          <div style={{ position:'fixed', top: rect.top - pad, left:0, width: Math.max(0, rect.left - pad), height: rect.height + pad*2, background: BG, zIndex:10000 }} />
+          <div style={{ position:'fixed', top: rect.top - pad, left: rect.right + pad, right:0, height: rect.height + pad*2, background: BG, zIndex:10000 }} />
+          {/* Spotlight border */}
+          <div style={{
+            position:'fixed',
+            top: rect.top - pad, left: rect.left - pad,
+            width: rect.width + pad*2, height: rect.height + pad*2,
+            border: '2px solid rgba(255,255,255,0.5)',
+            borderRadius: 12,
+            zIndex: 10001,
+            pointerEvents: 'none',
+            boxShadow: '0 0 20px rgba(99,102,241,0.4)',
+          }} />
+        </>
+      ) : (
+        <div style={{ position:'fixed', inset:0, background: BG, zIndex:10000 }} />
       )}
 
-      {/* Card */}
-      <div style={cardStyle} className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      {/* Tour card */}
+      <div style={getCardStyle()} className="bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-violet-700 px-5 py-4">
+        <div style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', padding: '14px 16px' }}>
           {/* Progress bar */}
-          <div className="flex gap-1 mb-3">
+          <div style={{ display:'flex', gap:3, marginBottom:10 }}>
             {STEPS.map((_, i) => (
-              <div key={i} className="h-1 rounded-full flex-1 transition-all"
-                style={{ background: i <= step ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.25)' }} />
+              <div key={i} style={{
+                height: 3, borderRadius: 9999, flex:1, transition:'all 0.3s',
+                background: i <= step ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)',
+              }} />
             ))}
           </div>
-          <h3 className="text-white font-bold text-sm">{s.title}</h3>
-          <p className="text-white/60 text-[10px] mt-0.5">Стъпка {step + 1} от {STEPS.length}</p>
+          <div style={{ color:'white', fontWeight:700, fontSize:13 }}>{s.title}</div>
+          <div style={{ color:'rgba(255,255,255,0.6)', fontSize:10, marginTop:2 }}>
+            Стъпка {step + 1} от {STEPS.length}
+          </div>
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4">
-          <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line">{s.text}</p>
+        <div style={{ padding: '12px 16px' }}>
+          <p style={{ color:'#475569', fontSize:12, lineHeight:1.6, whiteSpace:'pre-line', margin:0 }}>{s.text}</p>
           {s.tip && (
-            <div className="mt-3 px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
-              <p className="text-indigo-600 text-xs font-medium">{s.tip}</p>
+            <div style={{ marginTop:10, padding:'7px 10px', background:'#eef2ff', borderRadius:8, border:'1px solid #c7d2fe' }}>
+              <p style={{ color:'#4f46e5', fontSize:11, fontWeight:500, margin:0 }}>{s.tip}</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-4 flex items-center justify-between">
-          <button onClick={finish} className="text-xs text-slate-400 hover:text-slate-600">
-            Пропусни тура
-          </button>
+        <div style={{ padding:'10px 16px 14px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <button
-            onClick={next}
-            className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors"
+            onClick={finish}
+            style={{ fontSize:11, color:'#94a3b8', background:'none', border:'none', cursor:'pointer' }}
           >
-            {isLast ? '🚀 Започни!' : 'Следващо →'}
+            Пропусни
           </button>
+          {s.waitFor === 'manual' && (
+            <button
+              onClick={advance}
+              style={{
+                padding:'8px 16px', borderRadius:10,
+                background:'#4f46e5', color:'white',
+                fontSize:12, fontWeight:700, border:'none', cursor:'pointer',
+              }}
+            >
+              {s.btn || (isLast ? '🚀 Готово!' : 'Следващо →')}
+            </button>
+          )}
+          {s.waitFor === 'click' && (
+            <span style={{ fontSize:11, color:'#4f46e5', fontWeight:500 }}>
+              👆 Натисни маркирания елемент
+            </span>
+          )}
         </div>
       </div>
     </>

@@ -135,7 +135,6 @@ export default function OnboardingTour({ onDone }) {
       <div
         className="fixed inset-0"
         style={{ zIndex: 10000, background: 'rgba(0,0,0,0.55)', pointerEvents: 'auto' }}
-        onClick={finish}
       />
 
       {/* Spotlight around target */}

@@ -95,6 +95,7 @@ export default function ClientsPage() {
 
       <div className="p-4 border-t border-slate-100 bg-white flex-shrink-0">
         <button
+          data-tour="new-client-btn"
           onClick={() => { setEditClient(null); setShowForm(true) }}
           className="w-full py-3 rounded-xl font-semibold text-white text-sm
                      bg-gradient-to-r from-indigo-600 to-violet-700
