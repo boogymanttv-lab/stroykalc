@@ -318,20 +318,10 @@ export default function Calculator({ editProjectId }) {
       </div>
 
       {/* ── Action bar ── */}
-      <div className="bg-white border-t border-slate-100 p-4 flex-shrink-0">
-        <button
-          data-tour="add-service-btn"
-          onClick={() => setShowPicker(true)}
-          className="w-full py-3 rounded-xl font-semibold text-white text-sm
-                     bg-gradient-to-r from-indigo-600 to-violet-700
-                     hover:opacity-90 active:scale-[.98] transition-all shadow-sm"
-        >
-          + Добави услуга
-        </button>
-
+      <div className="bg-white border-t border-slate-100 p-3 flex-shrink-0">
         {items.length > 0 && (
           <>
-            <div className="flex gap-2 mt-2.5">
+            <div className="flex gap-2 mb-2">
               <button
                 onClick={saveProject}
                 disabled={saving}
@@ -358,7 +348,7 @@ export default function Calculator({ editProjectId }) {
 
             {/* Extra actions */}
             {showActions && (
-              <div className="mt-2 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+              <div className="mb-2 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
                 <button
                   onClick={handleContract}
                   className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors border-b border-slate-200"
@@ -376,6 +366,16 @@ export default function Calculator({ editProjectId }) {
             )}
           </>
         )}
+
+        <button
+          data-tour="add-service-btn"
+          onClick={() => setShowPicker(true)}
+          className="w-full py-3 rounded-xl font-semibold text-white text-sm
+                     bg-gradient-to-r from-indigo-600 to-violet-700
+                     hover:opacity-90 active:scale-[.98] transition-all shadow-sm"
+        >
+          + Добави услуга
+        </button>
       </div>
 
       {showPicker && (
