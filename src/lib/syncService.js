@@ -36,19 +36,33 @@ export async function flushQueue() {
   if (!navigator.onLine) return 0
   const pending = await db.sync_queue.toArray()
   let synced = 0
+  // Postgres error codes that will NEVER succeed on retry — remove from queue
+  const FATAL_CODES = ['23503', '23505', '23502', '42501', '42P01']
+
   for (const item of pending) {
     try {
       const { table_name, operation, data } = item
+      let error = null
       if (operation === 'upsert') {
-        await supabase.from(table_name).upsert(data)
+        ;({ error } = await supabase.from(table_name).upsert(data))
       } else if (operation === 'update') {
         const { id, ...rest } = data
-        await supabase.from(table_name).update(rest).eq('id', id)
+        ;({ error } = await supabase.from(table_name).update(rest).eq('id', id))
       } else if (operation === 'delete') {
-        await supabase.from(table_name).delete().eq('id', data.id)
+        ;({ error } = await supabase.from(table_name).delete().eq('id', data.id))
       }
-      await db.sync_queue.delete(item.id)
-      synced++
+      if (error) {
+        // Non-retryable error — drop from queue so it doesn't block forever
+        if (FATAL_CODES.includes(error.code)) {
+          console.warn('[flushQueue] fatal error, dropping item', error.code, item)
+          await db.sync_queue.delete(item.id)
+        } else {
+          console.warn('[flushQueue] retryable error, keeping item', error.code, item)
+        }
+      } else {
+        await db.sync_queue.delete(item.id)
+        synced++
+      }
     } catch (e) {
       console.warn('[flushQueue] item failed', item, e)
     }
