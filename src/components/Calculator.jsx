@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { db } from '../lib/db'
@@ -21,10 +21,13 @@ export default function Calculator({ editProjectId }) {
   const [clientId,       setClientId]       = useState('')
   const [savedId,        setSavedId]        = useState(null)
 
-  const [showPicker,  setShowPicker]  = useState(false)
-  const [clients,     setClients]     = useState([])
-  const [saving,      setSaving]      = useState(false)
-  const [showActions, setShowActions] = useState(false) // extra actions menu
+  const [showPicker,    setShowPicker]    = useState(false)
+  const [clients,       setClients]       = useState([])
+  const [saving,        setSaving]        = useState(false)
+  const [showActions,   setShowActions]   = useState(false)
+  const [draftRestored, setDraftRestored] = useState(false)
+  const draftKey = `calc_draft_${user?.id || 'anon'}`
+  const autoSaveTimer = useRef(null)
 
   const subtotal = items.reduce((s, i) => s + Number(i.qty) * Number(i.price), 0)
   const vatAmt   = vatOn ? subtotal * 0.2 : 0
@@ -78,6 +81,48 @@ export default function Calculator({ editProjectId }) {
     loadProject()
   }, [editProjectId])
 
+  // ── Restore draft on first load (only for new projects) ──
+  useEffect(() => {
+    if (editProjectId) return // editing existing — don't restore draft
+    try {
+      const saved = localStorage.getItem(draftKey)
+      if (!saved) return
+      const draft = JSON.parse(saved)
+      if (!draft.items?.length) return
+      if (window.confirm('📋 Намерена е незапазена чернова. Искаш ли да я възстановиш?')) {
+        setProjectName(draft.projectName || '')
+        setProjectAddress(draft.projectAddress || '')
+        setOfferNumber(draft.offerNumber || '')
+        setVatOn(draft.vatOn || false)
+        setNotes(draft.notes || '')
+        setClientId(draft.clientId || '')
+        setItems(draft.items || [])
+        setDraftRestored(true)
+      } else {
+        localStorage.removeItem(draftKey)
+      }
+    } catch {}
+  }, []) // eslint-disable-line
+
+  // ── Auto-save draft on every change ──
+  useEffect(() => {
+    if (editProjectId) return // don't draft-save when editing existing
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      try {
+        if (items.length === 0 && !projectName) {
+          localStorage.removeItem(draftKey)
+          return
+        }
+        localStorage.setItem(draftKey, JSON.stringify({
+          projectName, projectAddress, offerNumber, vatOn, notes, clientId, items,
+          savedAt: new Date().toISOString(),
+        }))
+      } catch {}
+    }, 800)
+    return () => clearTimeout(autoSaveTimer.current)
+  }, [projectName, projectAddress, offerNumber, vatOn, notes, clientId, items]) // eslint-disable-line
+
   const addItem    = item => setItems(prev => [...prev, item])
   const removeItem = id   => setItems(prev => prev.filter(i => i.id !== id))
   const updateItem = (id, key, val) =>
@@ -115,6 +160,7 @@ export default function Calculator({ editProjectId }) {
     }
 
     setSaving(false)
+    localStorage.removeItem(draftKey)
     alert('✅ Проектът е запазен!')
   }
 
