@@ -62,13 +62,28 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
       if (pays) await db.payments.bulkPut(pays.map(p => ({ ...p, id: p.id || (p.project_id + '_' + p.amount) })))
     } else {
       // Offline — read from IndexedDB
-      const localProj = await db.projects.where('user_id').equals(user.id).toArray()
-      proj = localProj
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .map(p => ({ ...p, clients: p._client_name ? { name: p._client_name } : null }))
-      pays = await db.payments.where('user_id').equals(user.id).toArray()
-      phs  = await db.photos.where('user_id').equals(user.id).toArray()
-      tks  = await db.tasks.where('user_id').equals(user.id).filter(t => t.status === 'todo').toArray()
+      try {
+        let localProj = await db.projects.where('user_id').equals(user.id).toArray()
+        if (!localProj.length) localProj = await db.projects.toArray()
+        proj = localProj
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .map(p => ({ ...p, clients: p._client_name ? { name: p._client_name } : null }))
+
+        let localPays = await db.payments.where('user_id').equals(user.id).toArray()
+        if (!localPays.length) localPays = await db.payments.toArray()
+        pays = localPays
+
+        let localPhs = await db.photos.where('user_id').equals(user.id).toArray()
+        if (!localPhs.length) localPhs = await db.photos.toArray()
+        phs = localPhs
+
+        let localTks = await db.tasks.where('user_id').equals(user.id).filter(t => t.status === 'todo').toArray()
+        if (!localTks.length) localTks = (await db.tasks.toArray()).filter(t => t.status === 'todo')
+        tks = localTks
+      } catch (e) {
+        console.warn('[offline] ProjectsPage read failed', e)
+        proj = []; pays = []; phs = []; tks = []
+      }
     }
 
     setProjects(proj || [])

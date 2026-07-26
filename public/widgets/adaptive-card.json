@@ -1,0 +1,25 @@
+{
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Maistorix",
+      "weight": "Bolder",
+      "size": "Medium"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Калкулатор за строителство",
+      "wrap": true,
+      "isSubtle": true
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.OpenUrl",
+      "title": "Отвори",
+      "url": "https://maistorix.com"
+    }
+  ]
+}

@@ -12,7 +12,6 @@ import SyncStatus from './components/SyncStatus'
 import UpgradePage from './pages/UpgradePage'
 import AdminPage from './pages/AdminPage'
 import OnboardingTour from './components/OnboardingTour'
-import GuidedTour from './components/GuidedTour'
 import { syncDown } from './lib/syncService'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
@@ -35,7 +34,9 @@ export default function App() {
 
 function AppInner() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth()
-  const [tab, setTab] = useState('calc')
+  const urlParams = new URLSearchParams(window.location.search)
+  const shortcut  = urlParams.get('shortcut')
+  const [tab, setTab] = useState(shortcut || 'calc')
 
   // ── Share / Client portal route ──
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
@@ -53,8 +54,7 @@ function AppInner() {
   }, [user])
 
   // Handle Stripe redirect back after payment
-  const [upgradeSuccess,  setUpgradeSuccess]  = useState(false)
-  const [showGuidedTour, setShowGuidedTour] = useState(false)
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false)
   useEffect(() => {
     if (window.location.search.includes('upgraded=true')) {
       refreshProfile()
@@ -217,8 +217,7 @@ function AppInner() {
 
         {/* Views */}
         <main className="flex-1 overflow-hidden flex flex-col">
-          <OnboardingTour onDone={() => setShowGuidedTour(true)} />
-          {showGuidedTour && <GuidedTour setTab={setTab} onDone={() => setShowGuidedTour(false)} />}
+          <OnboardingTour />
           <SyncStatus onOnline={() => syncDown(user.id)} />
           {upgradeSuccess && (
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold animate-pulse">

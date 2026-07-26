@@ -22,8 +22,14 @@ export default function ClientsPage() {
         setClients(data)
       }
     } else {
-      const local = await db.clients.where('user_id').equals(user.id).toArray()
-      setClients(local.sort((a, b) => a.name.localeCompare(b.name)))
+      try {
+        let local = await db.clients.where('user_id').equals(user.id).toArray()
+        if (!local.length) local = await db.clients.toArray()
+        setClients(local.sort((a, b) => a.name.localeCompare(b.name)))
+      } catch (e) {
+        console.warn('[offline] ClientsPage read failed', e)
+        setClients([])
+      }
     }
     setLoading(false)
   }

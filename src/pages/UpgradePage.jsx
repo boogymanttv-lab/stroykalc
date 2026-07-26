@@ -47,17 +47,50 @@ export default function UpgradePage() {
       setLoading(null)
     }
   }
+    const [portalLoading, setPortalLoading] = useState(false)
+
+  async function handleManageSubscription() {
+    setPortalLoading(true)
+    try {
+      const res  = await fetch('/api/customer-portal', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ userId: user.id }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } catch (e) {
+      alert('Грешка: ' + e.message)
+    }
+    setPortalLoading(false)
+  }
+
   const isPro = profile?.plan === 'pro'
 
   if (isPro) {
     return (
       <div className="flex-1 overflow-y-auto thin-scroll p-4 max-w-xl mx-auto w-full">
-        <div className="text-center py-16">
+        <div className="text-center py-12">
           <div className="text-6xl mb-4">🌟</div>
           <h2 className="text-2xl font-black text-slate-800 mb-2">Вие сте PRO!</h2>
-          <p className="text-slate-500 text-sm">Имате достъп до всички функции без ограничения.</p>
-          <div className="mt-6 inline-block px-6 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-violet-700 text-white font-bold text-sm">
+          <p className="text-slate-500 text-sm mb-6">Имате достъп до всички функции без ограничения.</p>
+          <div className="inline-block px-6 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-violet-700 text-white font-bold text-sm mb-8">
             ✅ Активен PRO план
+          </div>
+
+          <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm text-left">
+            <h3 className="font-bold text-slate-700 text-sm mb-1">Управление на абонамента</h3>
+            <p className="text-xs text-slate-400 mb-4">Промяна на карта, отказ или преглед на фактури.</p>
+            <button
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+              className="w-full py-3 rounded-xl font-semibold text-sm
+                         border border-slate-200 text-slate-600
+                         hover:bg-slate-50 active:scale-[.98] transition-all
+                         disabled:opacity-60"
+            >
+              {portalLoading ? '⏳ Зареждане...' : '⚙️ Управление на абонамента'}
+            </button>
           </div>
         </div>
       </div>

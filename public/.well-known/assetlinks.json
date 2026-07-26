@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.maistorix.app",
+    "sha256_cert_fingerprints": ["09:75:36:45:F8:66:34:45:24:83:4B:B7:EB:8D:43:DA:F1:51:C0:6B:ED:50:88:71:6B:64:72:08:B1:3B:2D:F5"]
+  }
+}]

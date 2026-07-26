@@ -1,7 +1,7 @@
 import { db } from './db'
 import { supabase } from './supabase'
 
-const TABLES = ['clients', 'projects', 'payments', 'expenses', 'tasks']
+const TABLES = ['clients', 'projects', 'payments', 'expenses', 'tasks', 'photos']
 
 /* ─────────────────────────────────────────────
    SYNC DOWN  — Supabase → IndexedDB
