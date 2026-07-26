@@ -87,7 +87,11 @@ export default function OnboardingTour({ onDone }) {
   const s = STEPS[step]
   const isCenter = s.position === 'center' || !rect
 
-  // Tooltip position
+  const TOOLTIP_HEIGHT = 180
+  const TOOLTIP_WIDTH  = 260
+  const pad = 16
+
+  // Tooltip position — clamp to viewport
   const getTooltipStyle = () => {
     if (isCenter) return {
       position: 'fixed',
@@ -95,29 +99,35 @@ export default function OnboardingTour({ onDone }) {
       transform: 'translate(-50%, -50%)',
       zIndex: 10001,
     }
-    const pad = 16
-    // Place tooltip to the right of target (desktop sidebar)
-    // or below target (mobile bottom nav)
     const isMobile = window.innerWidth < 768
     if (isMobile) {
+      const top = rect.top + rect.height + pad
+      const fitsBelow = top + TOOLTIP_HEIGHT < window.innerHeight
       return {
         position: 'fixed',
-        top: Math.min(rect.top + rect.height + pad, window.innerHeight - 200),
-        left: Math.max(pad, Math.min(rect.left, window.innerWidth - 280 - pad)),
+        top: fitsBelow ? top : rect.top - TOOLTIP_HEIGHT - pad,
+        left: Math.max(pad, Math.min(rect.left, window.innerWidth - TOOLTIP_WIDTH - pad)),
         zIndex: 10001,
       }
     }
+    // Desktop: right of element, clamped vertically
+    const rawTop = rect.top + rect.height / 2 - 60
+    const clampedTop = Math.max(pad, Math.min(rawTop, window.innerHeight - TOOLTIP_HEIGHT - pad))
     return {
       position: 'fixed',
-      top: rect.top + rect.height / 2 - 60,
+      top: clampedTop,
       left: rect.left + rect.width + pad,
       zIndex: 10001,
     }
   }
 
-  // Arrow direction
-  const arrowClass = isCenter ? '' :
-    window.innerWidth < 768 ? 'arrow-top' : 'arrow-left'
+  const tooltipStyle = getTooltipStyle()
+  const isMobile = window.innerWidth < 768
+  // Arrow flips if tooltip moved above target
+  const showArrowTop = !isCenter && isMobile && rect &&
+    (rect.top + rect.height + pad + TOOLTIP_HEIGHT < window.innerHeight)
+  const showArrowBottom = !isCenter && isMobile && rect && !showArrowTop
+  const showArrowLeft = !isCenter && !isMobile && rect
 
   return (
     <>
@@ -149,11 +159,11 @@ export default function OnboardingTour({ onDone }) {
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        style={{ ...getTooltipStyle(), width: 260 }}
+        style={{ ...tooltipStyle, width: TOOLTIP_WIDTH }}
         className="bg-white rounded-2xl shadow-2xl p-5 select-none"
       >
         {/* Arrow left (desktop) */}
-        {!isCenter && window.innerWidth >= 768 && rect && (
+        {showArrowLeft && (
           <div style={{
             position: 'absolute', left: -8, top: 28,
             width: 0, height: 0,
@@ -162,14 +172,24 @@ export default function OnboardingTour({ onDone }) {
             borderRight: '8px solid white',
           }} />
         )}
-        {/* Arrow top (mobile) */}
-        {!isCenter && window.innerWidth < 768 && rect && (
+        {/* Arrow top (mobile, tooltip below element) */}
+        {showArrowTop && (
           <div style={{
             position: 'absolute', top: -8, left: 24,
             width: 0, height: 0,
             borderLeft: '8px solid transparent',
             borderRight: '8px solid transparent',
             borderBottom: '8px solid white',
+          }} />
+        )}
+        {/* Arrow bottom (mobile, tooltip above element) */}
+        {showArrowBottom && (
+          <div style={{
+            position: 'absolute', bottom: -8, left: 24,
+            width: 0, height: 0,
+            borderLeft: '8px solid transparent',
+            borderRight: '8px solid transparent',
+            borderTop: '8px solid white',
           }} />
         )}
 
