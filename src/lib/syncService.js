@@ -154,6 +154,59 @@ export async function getPendingCount() {
   return db.sync_queue.count()
 }
 
+/* ─────────────────────────────────────────────
+   FLUSH OFFLINE DOCUMENTS
+   Uploads any locally-created documents (storage_path = null)
+   to Supabase Storage when back online.
+───────────────────────────────────────────── */
+export async function flushDocuments(userId) {
+  if (!navigator.onLine || !userId) return 0
+  let synced = 0
+  try {
+    const pending = await db.documents
+      .where('user_id').equals(userId)
+      .filter(d => !d.storage_path)
+      .toArray()
+
+    for (const doc of pending) {
+      if (!doc.html) continue
+      try {
+        const timestamp = new Date(doc.created_at).toISOString().replace(/[:.]/g, '-')
+        const filename  = `${doc.user_id}/${doc.project_id}/${doc.type}-${timestamp}.html`
+        const blob      = new Blob([doc.html], { type: 'text/html;charset=utf-8' })
+
+        const { error: upErr } = await supabase.storage
+          .from('documents')
+          .upload(filename, blob, { contentType: 'text/html;charset=utf-8', upsert: true })
+        if (upErr) { console.warn('[flushDocuments] upload failed', upErr); continue }
+
+        const { data: inserted, error: dbErr } = await supabase
+          .from('documents')
+          .insert({
+            project_id:   doc.project_id,
+            user_id:      doc.user_id,
+            type:         doc.type,
+            name:         doc.name,
+            storage_path: filename,
+          })
+          .select()
+          .single()
+        if (dbErr) { console.warn('[flushDocuments] db insert failed', dbErr); continue }
+
+        // Replace temp local record with real server record (keep html)
+        await db.documents.delete(doc.id)
+        await db.documents.put({ ...inserted, html: doc.html })
+        synced++
+      } catch (e) {
+        console.warn('[flushDocuments] item failed', e)
+      }
+    }
+  } catch (e) {
+    console.warn('[flushDocuments] failed', e)
+  }
+  return synced
+}
+
 /* internal */
 async function _queue(operation, table_name, data) {
   await db.sync_queue.add({

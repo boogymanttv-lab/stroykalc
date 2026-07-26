@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { flushQueue, getPendingCount } from '../lib/syncService'
+import { flushQueue, flushDocuments, getPendingCount } from '../lib/syncService'
 
-export default function SyncStatus({ onOnline }) {
+export default function SyncStatus({ onOnline, userId }) {
   const [online, setOnline]   = useState(navigator.onLine)
   const [pending, setPending] = useState(0)
   const [syncing, setSyncing] = useState(false)
@@ -15,8 +15,8 @@ export default function SyncStatus({ onOnline }) {
     setOnline(true)
     setSyncing(true)
     try {
-      const n = await flushQueue()
-      if (n > 0) {
+      const [n, nd] = await Promise.all([flushQueue(), flushDocuments(userId)])
+      if (n + nd > 0) {
         setJustSynced(true)
         setTimeout(() => setJustSynced(false), 3000)
       }

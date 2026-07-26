@@ -241,7 +241,7 @@ function AppInner() {
         {/* Views */}
         <main className="flex-1 overflow-hidden flex flex-col">
           <OnboardingTour />
-          <SyncStatus onOnline={() => syncDown(user.id)} />
+          <SyncStatus onOnline={() => syncDown(user.id)} userId={user.id} />
           {upgradeSuccess && (
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold animate-pulse">
               🎉 Добре дошли в PRO! Всички функции са отключени.
