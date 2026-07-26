@@ -213,6 +213,9 @@ export default function Calculator({ editProjectId }) {
     })
   }
 
+  const [shareUrl,    setShareUrl]    = useState('')
+  const [shareCopied, setShareCopied] = useState(false)
+
   async function handleShare() {
     if (!savedId) { alert(t('saveFirst')); return }
     const { data: existing } = await supabase
@@ -223,13 +226,18 @@ export default function Calculator({ editProjectId }) {
       await supabase.from('projects').update({ share_token: token }).eq('id', savedId)
     }
     const url = `${window.location.origin}${window.location.pathname}#share/${token}`
-    try {
-      await navigator.clipboard.writeText(url)
-      alert(`${t('linkCopied')}\n\n${t('linkDesc')}\n${url}`)
-    } catch {
-      prompt(t('linkCopied'), url)
-    }
+    setShareUrl(url)
     setShowActions(false)
+  }
+
+  async function copyShareUrl() {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+    } catch {
+      // fallback — select input text
+    }
+    setShareCopied(true)
+    setTimeout(() => setShareCopied(false), 2500)
   }
 
   return (
@@ -388,6 +396,26 @@ export default function Calculator({ editProjectId }) {
               <span>🔗</span> {t('shareLink')}
               {!savedId && <span className="ml-auto text-xs text-slate-400">({t('saveFirst').replace('!', '')})</span>}
             </button>
+          </div>
+        )}
+
+        {/* Share URL bar */}
+        {shareUrl && (
+          <div className="flex items-center gap-2 mb-2 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2">
+            <span className="text-sm">🔗</span>
+            <input
+              readOnly
+              value={shareUrl}
+              className="flex-1 bg-transparent text-xs text-indigo-700 outline-none truncate"
+            />
+            <button
+              onClick={copyShareUrl}
+              className="flex-shrink-0 px-3 py-1 rounded-lg text-xs font-semibold transition-colors
+                         bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[.98]"
+            >
+              {shareCopied ? '✅ ' + t('copied') : t('copyLink')}
+            </button>
+            <button onClick={() => setShareUrl('')} className="text-indigo-300 hover:text-indigo-500 text-base leading-none">✕</button>
           </div>
         )}
 
