@@ -129,7 +129,7 @@ export const translations = {
   // ── Projects ──────────────────────────────────────────
   noProjects:    { bg: 'Няма запазени проекти', en: 'No saved projects' },
   noProjectsDesc:{ bg: 'Създайте оферта в Калкулатора и я запазете', en: 'Create an offer in the Calculator and save it' },
-  newProject:    { bg: '+ Нов проект',     en: '+ New project' },
+  newProject:    { bg: 'Нов проект',       en: 'New project' },
   services:      { bg: 'услуги',           en: 'services' },
   payments:      { bg: '💰 Плащания',      en: '💰 Payments' },
   expenses:      { bg: '💸 Разходи',       en: '💸 Expenses' },
@@ -153,7 +153,7 @@ export const translations = {
   // ── Clients ───────────────────────────────────────────
   noClients:     { bg: 'Няма добавени клиенти', en: 'No clients added' },
   noClientsDesc: { bg: 'Добавете клиент, за да го свържете с проект', en: 'Add a client to link them to a project' },
-  addClient:     { bg: '+ Нов клиент',   en: '+ New client' },
+  addClient:     { bg: 'Нов клиент',     en: 'New client' },
   editClient:    { bg: 'Редактирай клиент', en: 'Edit client' },
   newClient:     { bg: 'Нов клиент',     en: 'New client' },
   clientName:    { bg: 'Имена',          en: 'Full name' },
