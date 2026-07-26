@@ -34,14 +34,14 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
   const [expenseProject, setExpenseProject] = useState(null)
   const [taskProject,    setTaskProject]    = useState(null)
   const [docProject,     setDocProject]     = useState(null)
-  const [showProGate,    setShowProGate]    = useState(false)
+  const [proGateFeature, setProGateFeature] = useState(null) // null = hidden
   const [taskMap,        setTaskMap]        = useState({}) // { project_id: count }
   // payment sums per project: { [project_id]: number }
   const [paidMap,    setPaidMap]      = useState({})
   // photo counts per project: { [project_id]: number }
   const [photoMap,   setPhotoMap]     = useState({})
 
-  const proAction = fn => isPro ? fn() : setShowProGate(true)
+  const proAction = (fn, feature) => isPro ? fn() : setProGateFeature(feature || 'default')
 
   useEffect(() => { loadAll() }, [])
 
@@ -325,13 +325,13 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
                       💰 Плащания
                     </button>
                     <button
-                      onClick={() => proAction(() => setExpenseProject(p))}
+                      onClick={() => proAction(() => setExpenseProject(p), 'expenses')}
                       className="flex-1 text-xs py-2.5 rounded-xl bg-orange-50 text-orange-600 font-semibold hover:bg-orange-100 transition-colors"
                     >
                       💸 Разходи{!isPro && ' ⚡'}
                     </button>
                     <button
-                      onClick={() => proAction(() => setTaskProject(p))}
+                      onClick={() => proAction(() => setTaskProject(p), 'tasks')}
                       className="relative text-xs px-3 py-2.5 rounded-xl bg-indigo-50 text-indigo-600 font-semibold hover:bg-indigo-100 transition-colors"
                       title="Задачи"
                     >
@@ -349,25 +349,25 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
                       🖨️ Оферта
                     </button>
                     <button
-                      onClick={() => proAction(() => handleContractPDF(p))}
+                      onClick={() => proAction(() => handleContractPDF(p), 'contract')}
                       className="flex-1 text-xs py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors"
                     >
                       📄 Договор{!isPro && ' ⚡'}
                     </button>
                     <button
-                      onClick={() => proAction(() => setDocProject(p))}
+                      onClick={() => proAction(() => setDocProject(p), 'documents')}
                       className="flex-1 text-xs py-2 rounded-xl bg-amber-50 text-amber-700 font-semibold hover:bg-amber-100 transition-colors"
                     >
                       📁 Документи{!isPro && ' ⚡'}
                     </button>
                     <button
-                      onClick={() => proAction(() => handleShare(p))}
+                      onClick={() => proAction(() => handleShare(p), 'share')}
                       className="flex-1 text-xs py-2 rounded-xl bg-violet-50 text-violet-700 font-semibold hover:bg-violet-100 transition-colors"
                     >
                       🔗 Сподели{!isPro && ' ⚡'}
                     </button>
                     <button
-                      onClick={() => proAction(() => setPhotoProject(p))}
+                      onClick={() => proAction(() => setPhotoProject(p), 'photos')}
                       className="relative text-xs px-3 py-2 rounded-xl bg-slate-100 text-slate-600 font-semibold hover:bg-slate-200 transition-colors"
                     >
                       📷{photoMap[p.id] ? <span className="absolute -top-1 -right-1 bg-violet-600 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">{photoMap[p.id]}</span> : null}
@@ -446,10 +446,11 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
       )}
 
       {/* PRO gate */}
-      {showProGate && (
+      {proGateFeature && (
         <ProGateModal
-          onClose={() => setShowProGate(false)}
-          onUpgrade={() => { setShowProGate(false); onGoUpgrade?.() }}
+          feature={proGateFeature}
+          onClose={() => setProGateFeature(null)}
+          onUpgrade={() => { setProGateFeature(null); onGoUpgrade?.() }}
         />
       )}
     </div>

@@ -17,14 +17,16 @@ const FEATURES_PRO = [
   'Снимки по проекти',
   'Отчети + CSV/Excel експорт',
   'Задачи по проект',
+  'Документи по проект (офлайн)',
   'Офлайн режим',
   'Приоритетна поддръжка',
 ]
 
 export default function UpgradePage() {
   const { user, profile } = useAuth()
-  const [loading, setLoading] = useState(null) // 'now' | 'trial' | null
-  const [error,   setError]   = useState('')
+  const [loading,  setLoading]  = useState(null) // 'now' | 'trial' | null
+  const [error,    setError]    = useState('')
+  const [billing,  setBilling]  = useState('monthly') // 'monthly' | 'yearly'
 
   async function handleUpgrade(trial = false) {
     setLoading(trial ? 'trial' : 'now')
@@ -33,7 +35,7 @@ export default function UpgradePage() {
       const res = await fetch('/api/create-checkout-session', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ userId: user.id, userEmail: user.email, trial }),
+        body:    JSON.stringify({ userId: user.id, userEmail: user.email, trial, billing }),
       })
       const data = await res.json()
       if (data.url) {
@@ -112,18 +114,60 @@ export default function UpgradePage() {
 
         {/* Pricing card */}
         <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white text-center shadow-xl">
-          <div className="text-sm font-semibold text-indigo-200 mb-1">Maistorix PRO</div>
-          <div className="flex items-end justify-center gap-1 mb-1">
-            <span className="text-5xl font-black">€2.99</span>
-            <span className="text-indigo-200 mb-2">/месец</span>
+          <div className="text-sm font-semibold text-indigo-200 mb-3">Maistorix PRO</div>
+
+          {/* Billing toggle */}
+          <div className="flex items-center justify-center gap-1 bg-white/10 rounded-xl p-1 mb-5">
+            <button
+              onClick={() => setBilling('monthly')}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                billing === 'monthly'
+                  ? 'bg-white text-indigo-700 shadow'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Месечен
+            </button>
+            <button
+              onClick={() => setBilling('yearly')}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all relative ${
+                billing === 'yearly'
+                  ? 'bg-white text-indigo-700 shadow'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Годишен
+              <span className="absolute -top-2 -right-1 bg-amber-400 text-amber-900 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                -30%
+              </span>
+            </button>
           </div>
-          <div className="text-indigo-200 text-xs mb-5">или €24.99/година (2 месеца безплатно)</div>
+
+          {/* Price display */}
+          {billing === 'monthly' ? (
+            <>
+              <div className="flex items-end justify-center gap-1 mb-1">
+                <span className="text-5xl font-black">€2.99</span>
+                <span className="text-indigo-200 mb-2">/месец</span>
+              </div>
+              <div className="text-indigo-200 text-xs mb-5">€35.88/година</div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-end justify-center gap-1 mb-1">
+                <span className="text-5xl font-black">€24.99</span>
+                <span className="text-indigo-200 mb-2">/година</span>
+              </div>
+              <div className="text-indigo-200 text-xs mb-5">€2.08/месец · 2 месеца безплатно</div>
+            </>
+          )}
+
           <button
             onClick={() => handleUpgrade(false)}
             disabled={!!loading}
             className="w-full py-3.5 rounded-xl font-bold text-indigo-700 bg-white
                        hover:bg-indigo-50 active:scale-[.98] transition-all text-sm shadow-lg
-                       disabled:opacity-70"
+                       disabled:opacity-70 mb-2"
           >
             {loading === 'now' ? '⏳ Пренасочване...' : '⚡ Надградете сега'}
           </button>
@@ -137,7 +181,7 @@ export default function UpgradePage() {
             {loading === 'trial' ? '⏳ Пренасочване...' : '🎁 Тествайте 3 дни безплатно'}
           </button>
           {error && <p className="text-red-300 text-xs mt-2">{error}</p>}
-          <p className="text-xs text-indigo-200 mt-2">Отказ по всяко време · Без скрити такси · За цената на кафе</p>
+          <p className="text-xs text-indigo-200 mt-3">Отказ по всяко време · Без скрити такси · За цената на кафе</p>
         </div>
 
         {/* Feature comparison */}
