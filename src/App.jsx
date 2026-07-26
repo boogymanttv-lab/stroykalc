@@ -98,7 +98,7 @@ function AppInner() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="text-5xl mb-3">🏗️</div>
+          <img src="/pwa-192.png" alt="Maistorix" className="w-16 h-16 rounded-2xl mb-3 mx-auto shadow-md" />
           <p className="text-slate-400 text-sm animate-pulse">{t('loading')}</p>
         </div>
       </div>
@@ -143,7 +143,10 @@ function AppInner() {
       <aside className="hidden md:flex flex-col w-56 flex-shrink-0
                         bg-gradient-to-b from-indigo-600 to-violet-700 text-white">
         <div className="px-5 pt-6 pb-5 border-b border-white/20">
-          <h1 className="text-xl font-black tracking-tight">🏗️ Maistorix</h1>
+          <div className="flex items-center gap-2.5">
+            <img src="/pwa-192.png" alt="Maistorix" className="w-8 h-8 rounded-lg shadow" />
+            <h1 className="text-xl font-black tracking-tight">Maistorix</h1>
+          </div>
           <p className="text-xs text-white/60 mt-1 truncate">{displayName}</p>
         </div>
 
@@ -209,7 +212,10 @@ function AppInner() {
         <header className="md:hidden bg-gradient-to-r from-indigo-600 to-violet-700
                            text-white px-4 py-3 flex-shrink-0 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-black">🏗️ Maistorix</h1>
+            <div className="flex items-center gap-2">
+              <img src="/pwa-192.png" alt="Maistorix" className="w-7 h-7 rounded-lg shadow" />
+              <h1 className="text-lg font-black">Maistorix</h1>
+            </div>
             <p className="text-xs text-white/70 truncate max-w-[140px]">{displayName}</p>
           </div>
           <div className="flex items-center gap-2">

@@ -70,7 +70,7 @@ export default function AuthPage() {
     <Screen lang={lang} setLang={setLang}>
       {/* Logo */}
       <div className="text-center mb-8">
-        <div className="text-4xl mb-2">🏗️</div>
+        <img src="/pwa-192.png" alt="Maistorix" className="w-16 h-16 rounded-2xl mb-2 mx-auto shadow-md" />
         <h1 className="text-2xl font-black text-slate-800">Maistorix</h1>
         <p className="text-slate-400 text-sm mt-1">{t('appTagline')}</p>
       </div>

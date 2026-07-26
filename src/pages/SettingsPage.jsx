@@ -89,7 +89,7 @@ export default function SettingsPage() {
             <div className="w-20 h-20 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0">
               {logoPreview
                 ? <img src={logoPreview} alt="logo" className="w-full h-full object-contain" />
-                : <span className="text-3xl">🏗️</span>
+                : <img src="/pwa-192.png" alt="Maistorix" className="w-12 h-12 rounded-xl opacity-40" />
               }
             </div>
             <div>

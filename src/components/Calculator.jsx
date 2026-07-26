@@ -269,7 +269,7 @@ export default function Calculator({ editProjectId }) {
       <div className="flex-1 overflow-y-auto thin-scroll p-4">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-16">
-            <div className="text-6xl mb-4">🏗️</div>
+            <img src="/pwa-192.png" alt="Maistorix" className="w-20 h-20 rounded-2xl mb-4 mx-auto shadow-md opacity-80" />
             <h3 className="text-lg font-semibold text-slate-600 mb-2">{t('navCalc')}</h3>
             <p className="text-slate-400 text-sm">{t('addService').replace('+ ', '')}</p>
           </div>

@@ -47,7 +47,7 @@ export default function SharePage({ token }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="text-5xl mb-3 animate-pulse">🏗️</div>
+          <img src="/pwa-192.png" alt="Maistorix" className="w-16 h-16 rounded-2xl mb-3 mx-auto shadow-md animate-pulse" />
           <p className="text-slate-400 text-sm">Зареждане на офертата...</p>
         </div>
       </div>
@@ -82,7 +82,10 @@ export default function SharePage({ token }) {
       <div className="bg-gradient-to-r from-indigo-600 to-violet-700 text-white px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="font-black text-lg">🏗️ {companyName}</h1>
+            <div className="flex items-center gap-2">
+              <img src="/pwa-192.png" alt="Maistorix" className="w-7 h-7 rounded-lg shadow" />
+              <h1 className="font-black text-lg">{companyName}</h1>
+            </div>
             <p className="text-white/70 text-xs mt-0.5">Оферта за Вас</p>
           </div>
           <button

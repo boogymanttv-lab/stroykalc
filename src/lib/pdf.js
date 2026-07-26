@@ -170,7 +170,7 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
     <div class="company-block">
       ${profile?.logo_url
         ? `<img src="${profile.logo_url}" class="logo" alt="logo" />`
-        : `<div class="logo-ph">🏗️</div>`}
+        : `<img src="https://maistorix.vercel.app/pwa-192.png" class="logo" alt="Maistorix" style="border-radius:8px;" />`}
       <div>
         <div class="company-name">${profile?.company_name || profile?.full_name || 'Maistorix'}</div>
         ${profile?.phone      ? `<div class="company-det">📞 ${profile.phone}</div>` : ''}
