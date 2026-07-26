@@ -196,6 +196,9 @@ export default function SettingsPage() {
           {saving ? '⏳ Запазване...' : saved ? '✅ Запазено!' : '💾 Запази промените'}
         </button>
 
+        {/* Account management */}
+        <AccountManagement user={user} />
+
         {/* Legal links */}
         <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
           <p className="text-xs text-slate-400 text-center mb-1">Maistorix © {new Date().getFullYear()}</p>
@@ -211,6 +214,133 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function AccountManagement({ user }) {
+  const [mode, setMode]       = useState(null) // null | 'suspend' | 'delete'
+  const [days, setDays]       = useState(7)
+  const [password, setPassword] = useState('')
+  const [reason, setReason]   = useState('')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg]         = useState('')
+
+  async function handleSuspend() {
+    if (!password) { setMsg('Въведете паролата си.'); return }
+    if (!reason)   { setMsg('Въведете причина.'); return }
+    setLoading(true)
+    const res  = await fetch('/api/account-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'suspend', userId: user.id, password, reason, days }),
+    })
+    const data = await res.json()
+    setLoading(false)
+    if (data.ok) {
+      setMsg(`Акаунтът е спрян до ${new Date(data.suspended_until).toLocaleDateString('bg-BG')}. Ще бъдете изведени.`)
+      setTimeout(() => window.location.reload(), 2500)
+    } else {
+      setMsg(data.error || 'Грешка')
+    }
+  }
+
+  async function handleDeleteRequest() {
+    if (!password) { setMsg('Въведете паролата си.'); return }
+    if (!reason)   { setMsg('Въведете причина.'); return }
+    setLoading(true)
+    const res  = await fetch('/api/account-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'request_delete', userId: user.id, password, reason }),
+    })
+    const data = await res.json()
+    setLoading(false)
+    if (data.ok) {
+      setMsg('Заявката е изпратена. Ще получите потвърждение от администратора.')
+      setMode(null)
+    } else {
+      setMsg(data.error || 'Грешка')
+    }
+  }
+
+  return (
+    <div className="pt-4 border-t border-slate-100">
+      <h3 className="font-bold text-slate-700 text-sm mb-3">⚙️ Управление на акаунта</h3>
+
+      {!mode && (
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => { setMode('suspend'); setMsg('') }}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold border border-amber-200
+                       text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
+          >
+            ⏸️ Временно спиране на акаунта
+          </button>
+          <button
+            onClick={() => { setMode('delete'); setMsg('') }}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold border border-red-200
+                       text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+          >
+            🗑️ Заявка за изтриване на акаунта
+          </button>
+        </div>
+      )}
+
+      {mode === 'suspend' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+          <p className="text-xs text-amber-800 font-semibold">Временно спиране — изберете период:</p>
+          <div className="flex gap-2">
+            {[7, 14, 30].map(d => (
+              <button key={d} onClick={() => setDays(d)}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors
+                  ${days === d ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300'}`}>
+                {d} дни
+              </button>
+            ))}
+          </div>
+          <input type="password" placeholder="Вашата парола" value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400" />
+          <textarea placeholder="Причина за спирането..." value={reason}
+            onChange={e => setReason(e.target.value)} rows={2}
+            className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400 resize-none" />
+          {msg && <p className="text-xs text-amber-700">{msg}</p>}
+          <div className="flex gap-2">
+            <button onClick={() => setMode(null)}
+              className="flex-1 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-600">
+              Отказ
+            </button>
+            <button onClick={handleSuspend} disabled={loading}
+              className="flex-1 py-2 rounded-lg text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-60">
+              {loading ? '⏳...' : 'Потвърди'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mode === 'delete' && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+          <p className="text-xs text-red-700 font-semibold">Заявката ще бъде разгледана от администратора. Акаунтът няма да бъде изтрит веднага.</p>
+          <input type="password" placeholder="Вашата парола" value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400" />
+          <textarea placeholder="Защо искате да изтриете акаунта си?" value={reason}
+            onChange={e => setReason(e.target.value)} rows={3}
+            className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400 resize-none" />
+          {msg && <p className="text-xs text-red-600">{msg}</p>}
+          <div className="flex gap-2">
+            <button onClick={() => setMode(null)}
+              className="flex-1 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-600">
+              Отказ
+            </button>
+            <button onClick={handleDeleteRequest} disabled={loading}
+              className="flex-1 py-2 rounded-lg text-xs font-bold bg-red-500 text-white hover:bg-red-600 disabled:opacity-60">
+              {loading ? '⏳...' : 'Изпрати заявка'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

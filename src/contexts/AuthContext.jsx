@@ -45,8 +45,40 @@ export function AuthProvider({ children }) {
   }
 
   async function signIn(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return error
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) return error
+
+    // Check account status
+    const { data: prof } = await supabase
+      .from('profiles').select('account_status, suspended_until').eq('id', data.user.id).single()
+
+    if (prof?.account_status === 'suspended') {
+      const until = prof.suspended_until ? new Date(prof.suspended_until) : null
+      if (until && until > new Date()) {
+        // Still suspended — sign out and block
+        await supabase.auth.signOut()
+        const untilStr = until.toLocaleDateString('bg-BG')
+        return { message: `Акаунтът ви е временно спрян до ${untilStr}. Свържете се с нас за съдействие.` }
+      } else if (until && until <= new Date()) {
+        // Period expired without login → needs admin reactivation
+        await supabase.from('profiles')
+          .update({ account_status: 'pending_reactivation' }).eq('id', data.user.id)
+        await supabase.auth.signOut()
+        return { message: 'Периодът на спиране изтече. Акаунтът ви очаква потвърждение от администратора.' }
+      }
+    }
+
+    if (prof?.account_status === 'pending_reactivation') {
+      await supabase.auth.signOut()
+      return { message: 'Акаунтът ви очаква потвърждение от администратора за реактивиране.' }
+    }
+
+    if (prof?.account_status === 'pending_delete') {
+      await supabase.auth.signOut()
+      return { message: 'Заявката ви за изтриване на акаунта е под разглеждане.' }
+    }
+
+    return null
   }
 
   async function signOut() {
