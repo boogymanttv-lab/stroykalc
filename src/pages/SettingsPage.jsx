@@ -195,6 +195,21 @@ export default function SettingsPage() {
         >
           {saving ? '⏳ Запазване...' : saved ? '✅ Запазено!' : '💾 Запази промените'}
         </button>
+
+        {/* Legal links */}
+        <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
+          <p className="text-xs text-slate-400 text-center mb-1">Maistorix © {new Date().getFullYear()}</p>
+          <div className="flex justify-center gap-4">
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer"
+               className="text-xs text-indigo-500 hover:underline">
+              🔒 Поверителност
+            </a>
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer"
+               className="text-xs text-indigo-500 hover:underline">
+              📋 Общи условия
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   )

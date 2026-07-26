@@ -32,6 +32,28 @@ export default function App() {
   )
 }
 
+function CookieBanner() {
+  const [visible, setVisible] = useState(() => !localStorage.getItem('cookie_ok'))
+  if (!visible) return null
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 text-white px-4 py-3
+                    flex flex-col sm:flex-row items-start sm:items-center gap-3 shadow-2xl">
+      <p className="text-xs text-slate-300 flex-1">
+        🍪 Използваме само технически необходими бисквитки за работата на приложението.{' '}
+        <a href="/privacy.html" target="_blank" rel="noopener noreferrer"
+           className="underline text-indigo-300">Научи повече</a>
+      </p>
+      <button
+        onClick={() => { localStorage.setItem('cookie_ok', '1'); setVisible(false) }}
+        className="flex-shrink-0 px-4 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600
+                   text-white text-xs font-semibold transition-colors"
+      >
+        Разбрах
+      </button>
+    </div>
+  )
+}
+
 function AppInner() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth()
   const urlParams = new URLSearchParams(window.location.search)
@@ -258,6 +280,7 @@ function AppInner() {
         </nav>
       </div>
     </div>
+    <CookieBanner />
   )
 }
 
