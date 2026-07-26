@@ -318,53 +318,52 @@ export default function Calculator({ editProjectId }) {
       </div>
 
       {/* ── Action bar ── */}
-      <div className="bg-white border-t border-slate-100 p-3 flex-shrink-0">
-        {items.length > 0 && (
-          <>
-            <div className="flex gap-2 mb-2">
-              <button
-                onClick={saveProject}
-                disabled={saving}
-                className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm
-                           bg-emerald-500 hover:bg-emerald-600 active:scale-[.98] disabled:opacity-60"
-              >
-                {saving ? '⏳...' : '💾 Запази'}
-              </button>
-              <button
-                onClick={handlePDF}
-                className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm
-                           bg-blue-500 hover:bg-blue-600 active:scale-[.98]"
-              >
-                🖨️ PDF оферта
-              </button>
-              <button
-                onClick={() => setShowActions(v => !v)}
-                className="px-3 py-2.5 rounded-xl font-semibold text-slate-600 text-sm
-                           bg-slate-100 hover:bg-slate-200 active:scale-[.98]"
-              >
-                •••
-              </button>
-            </div>
+      <div className="bg-white border-t border-slate-100 p-3 flex-shrink-0 relative">
 
-            {/* Extra actions */}
-            {showActions && (
-              <div className="mb-2 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
-                <button
-                  onClick={handleContract}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors border-b border-slate-200"
-                >
-                  <span>📄</span> Генерирай договор
-                </button>
-                <button
-                  onClick={handleShare}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-                >
-                  <span>🔗</span> Сподели линк с клиент
-                  {!savedId && <span className="ml-auto text-xs text-slate-400">(запази първо)</span>}
-                </button>
-              </div>
-            )}
-          </>
+        {/* Extra actions popup — appears ABOVE */}
+        {showActions && items.length > 0 && (
+          <div className="absolute bottom-full left-3 right-3 mb-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-10">
+            <button
+              onClick={() => { handleContract(); setShowActions(false) }}
+              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
+            >
+              <span>📄</span> Генерирай договор
+            </button>
+            <button
+              onClick={() => { handleShare(); setShowActions(false) }}
+              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              <span>🔗</span> Сподели линк с клиент
+              {!savedId && <span className="ml-auto text-xs text-slate-400">(запази първо)</span>}
+            </button>
+          </div>
+        )}
+
+        {items.length > 0 && (
+          <div className="flex gap-2 mb-2">
+            <button
+              onClick={saveProject}
+              disabled={saving}
+              className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm
+                         bg-emerald-500 hover:bg-emerald-600 active:scale-[.98] disabled:opacity-60"
+            >
+              {saving ? '⏳...' : '💾 Запази'}
+            </button>
+            <button
+              onClick={handlePDF}
+              className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm
+                         bg-blue-500 hover:bg-blue-600 active:scale-[.98]"
+            >
+              🖨️ PDF оферта
+            </button>
+            <button
+              onClick={() => setShowActions(v => !v)}
+              className="px-3 py-2.5 rounded-xl font-semibold text-slate-600 text-sm
+                         bg-slate-100 hover:bg-slate-200 active:scale-[.98]"
+            >
+              •••
+            </button>
+          </div>
         )}
 
         <button
