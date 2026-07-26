@@ -9,7 +9,9 @@ export default function AuthPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
-  const [done, setDone]       = useState(false)     // after register → confirm email
+  const [done, setDone]       = useState(false)
+  const [agreedTerms,   setAgreedTerms]   = useState(false)
+  const [agreedPrivacy, setAgreedPrivacy] = useState(false)
 
   const isLogin = mode === 'login'
 
@@ -22,6 +24,9 @@ export default function AuthPage() {
     }
     if (password.length < 6) {
       setError('Паролата трябва да е поне 6 символа.'); return
+    }
+    if (!isLogin && (!agreedTerms || !agreedPrivacy)) {
+      setError('Трябва да приемете Общите условия и Политиката за поверителност.'); return
     }
 
     setLoading(true)
@@ -125,6 +130,42 @@ export default function AuthPage() {
               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 transition-colors"
               placeholder="Повтори паролата"
             />
+          </div>
+        )}
+
+        {!isLogin && (
+          <div className="space-y-2.5">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedTerms}
+                onChange={e => setAgreedTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded accent-indigo-600 flex-shrink-0"
+              />
+              <span className="text-xs text-slate-600 leading-relaxed">
+                Прочетох и приемам{' '}
+                <a href="/terms.html" target="_blank" rel="noopener noreferrer"
+                   className="text-indigo-600 underline font-semibold">
+                  Общите условия
+                </a>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedPrivacy}
+                onChange={e => setAgreedPrivacy(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded accent-indigo-600 flex-shrink-0"
+              />
+              <span className="text-xs text-slate-600 leading-relaxed">
+                Запознат съм с{' '}
+                <a href="/privacy.html" target="_blank" rel="noopener noreferrer"
+                   className="text-indigo-600 underline font-semibold">
+                  Политиката за поверителност
+                </a>{' '}
+                и давам съгласие за обработка на личните ми данни
+              </span>
+            </label>
           </div>
         )}
 
