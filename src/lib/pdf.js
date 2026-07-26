@@ -199,6 +199,7 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
   } else {
     alert('Моля, разреши изскачащите прозорци (pop-ups) в браузъра!')
   }
+  return html
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -394,4 +395,5 @@ export function generateContractPDF({ profile, client, project }) {
   } else {
     alert('Моля, разреши изскачащите прозорци (pop-ups) в браузъра!')
   }
+  return html
 }

@@ -7,6 +7,8 @@ import PaymentsModal from '../components/PaymentsModal'
 import PhotosModal from '../components/PhotosModal'
 import ExpensesModal from '../components/ExpensesModal'
 import { generateOfferPDF, generateContractPDF } from '../lib/pdf'
+import { saveDocument } from '../lib/documents'
+import DocumentsModal from '../components/DocumentsModal'
 import TasksModal from '../components/TasksModal'
 import ProGateModal from '../components/ProGate'
 
@@ -31,6 +33,7 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
   const [photoProject,   setPhotoProject]   = useState(null)
   const [expenseProject, setExpenseProject] = useState(null)
   const [taskProject,    setTaskProject]    = useState(null)
+  const [docProject,     setDocProject]     = useState(null)
   const [showProGate,    setShowProGate]    = useState(false)
   const [taskMap,        setTaskMap]        = useState({}) // { project_id: count }
   // payment sums per project: { [project_id]: number }
@@ -158,7 +161,7 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
     }
     const shareUrl = `${window.location.origin}${window.location.pathname}#share/${token}`
 
-    generateOfferPDF({
+    const html = generateOfferPDF({
       profile, client,
       shareUrl,
       isPro: profile?.plan === 'pro',
@@ -170,11 +173,23 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
         vat_amount: p.vat_amount,
       },
     })
+    if (html) {
+      saveDocument({
+        html, projectId: p.id, userId: user.id,
+        type: 'offer', name: `Оферта ${p.offer_number || new Date().toLocaleDateString('bg-BG')}`,
+      })
+    }
   }
 
   async function handleContractPDF(p) {
     const { profile, client } = await getProjectData(p)
-    generateContractPDF({ profile, client, project: p })
+    const html = generateContractPDF({ profile, client, project: p })
+    if (html) {
+      saveDocument({
+        html, projectId: p.id, userId: user.id,
+        type: 'contract', name: `Договор ${p.name}`,
+      })
+    }
   }
 
   async function handleShare(p) {
@@ -340,6 +355,12 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
                       📄 Договор{!isPro && ' ⚡'}
                     </button>
                     <button
+                      onClick={() => proAction(() => setDocProject(p))}
+                      className="flex-1 text-xs py-2 rounded-xl bg-amber-50 text-amber-700 font-semibold hover:bg-amber-100 transition-colors"
+                    >
+                      📁 Документи{!isPro && ' ⚡'}
+                    </button>
+                    <button
                       onClick={() => proAction(() => handleShare(p))}
                       className="flex-1 text-xs py-2 rounded-xl bg-violet-50 text-violet-700 font-semibold hover:bg-violet-100 transition-colors"
                     >
@@ -413,6 +434,14 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
         <TasksModal
           project={taskProject}
           onClose={() => { setTaskProject(null); loadAll() }}
+        />
+      )}
+
+      {/* Documents modal */}
+      {docProject && (
+        <DocumentsModal
+          project={docProject}
+          onClose={() => setDocProject(null)}
         />
       )}
 

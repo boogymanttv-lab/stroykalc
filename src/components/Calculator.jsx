@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { db } from '../lib/db'
 import { offlineInsert, offlineUpdate } from '../lib/syncService'
 import { generateOfferPDF, generateContractPDF } from '../lib/pdf'
+import { saveDocument } from '../lib/documents'
 import ServicePicker from './ServicePicker'
 
 const fmt = n =>
@@ -176,23 +177,30 @@ export default function Calculator({ editProjectId }) {
   async function handlePDF() {
     if (items.length === 0) { alert('Добавете поне една услуга!'); return }
     const clientData = await getClientData()
-    generateOfferPDF({
+    const num = offerNumber || ('OF-' + Date.now().toString().slice(-6))
+    const html = generateOfferPDF({
       profile,
       client: clientData,
       isPro: profile?.plan === 'pro',
       project: {
         name: projectName || 'Проект', address: projectAddress, notes, items,
         subtotal, vat: vatOn, vat_amount: vatAmt, total,
-        offer_number: offerNumber || ('OF-' + Date.now().toString().slice(-6)),
+        offer_number: num,
         offer_date: new Date().toLocaleDateString('bg-BG'),
       },
     })
+    if (html && savedId) {
+      saveDocument({
+        html, projectId: savedId, userId: user.id,
+        type: 'offer', name: `Оферта ${num}`,
+      })
+    }
   }
 
   async function handleContract() {
     if (items.length === 0) { alert('Добавете поне една услуга!'); return }
     const clientData = await getClientData()
-    generateContractPDF({
+    const html = generateContractPDF({
       profile,
       client: clientData,
       project: {
@@ -200,6 +208,12 @@ export default function Calculator({ editProjectId }) {
         subtotal, vat: vatOn, vat_amount: vatAmt, total,
       },
     })
+    if (html && savedId) {
+      saveDocument({
+        html, projectId: savedId, userId: user.id,
+        type: 'contract', name: `Договор ${projectName || 'Проект'}`,
+      })
+    }
     setShowActions(false)
   }
 
