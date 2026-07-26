@@ -315,6 +315,7 @@ export default function Calculator({ editProjectId }) {
       {/* ── Action bar ── */}
       <div className="bg-white border-t border-slate-100 p-4 flex-shrink-0">
         <button
+          data-tour="add-service-btn"
           onClick={() => setShowPicker(true)}
           className="w-full py-3 rounded-xl font-semibold text-white text-sm
                      bg-gradient-to-r from-indigo-600 to-violet-700
