@@ -100,7 +100,7 @@ function AppInner() {
     : TABS.find(t => t.id === tab)?.icon || ''
 
   return (
-    <div className="flex flex-col h-screen max-w-screen-sm mx-auto bg-white shadow-xl
+    <div className="flex flex-col h-[100dvh] max-w-screen-sm mx-auto bg-white shadow-xl
                     md:max-w-none md:flex-row">
 
       {/* ── Sidebar (desktop only) ── */}
@@ -235,7 +235,7 @@ function AppInner() {
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden flex border-t border-slate-100 bg-white flex-shrink-0">
+        <nav className="md:hidden flex border-t border-slate-100 bg-white flex-shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
           {TABS.map(t => (
             <button
               key={t.id}
