@@ -122,6 +122,7 @@ function AppInner() {
     : TABS.find(t => t.id === tab)?.icon || ''
 
   return (
+    <>
     <div className="flex flex-col h-[100dvh] max-w-screen-sm mx-auto bg-white shadow-xl
                     md:max-w-none md:flex-row">
 
@@ -281,6 +282,7 @@ function AppInner() {
       </div>
     </div>
     <CookieBanner />
+    </>
   )
 }
 
