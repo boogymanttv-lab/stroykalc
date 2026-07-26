@@ -1,4 +1,5 @@
 import { showToast } from './toast.js'
+import { openPDFViewer } from './pdfViewer.js'
 
 const fmt = (n, lang = 'bg') =>
   '€ ' + Number(n).toLocaleString(lang === 'en' ? 'en-GB' : 'bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -275,15 +276,7 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
 </body>
 </html>`
 
-  const win = window.open('', '_blank')
-  if (win) {
-    win.document.write(html)
-    win.document.close()
-  } else {
-    showToast(lang === 'en'
-      ? 'Please allow pop-ups for maistorix.com'
-      : 'Моля, разреши изскачащите прозорци (pop-ups) в браузъра!', 'warning')
-  }
+  openPDFViewer(html)
   return html
 }
 
@@ -472,14 +465,6 @@ export function generateContractPDF({ profile, client, project, lang = 'bg' }) {
 </body>
 </html>`
 
-  const win = window.open('', '_blank')
-  if (win) {
-    win.document.write(html)
-    win.document.close()
-  } else {
-    showToast(lang === 'en'
-      ? 'Please allow pop-ups for maistorix.com'
-      : 'Моля, разреши изскачащите прозорци (pop-ups) в браузъра!', 'warning')
-  }
+  openPDFViewer(html)
   return html
 }

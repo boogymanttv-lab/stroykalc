@@ -4,6 +4,7 @@ import { db } from '../lib/db'
 import { supabase } from '../lib/supabase'
 import { useLang } from '../contexts/LanguageContext'
 import { showToast } from '../lib/toast'
+import { openPDFViewer } from '../lib/pdfViewer'
 
 const TYPE_LABEL = {
   offer:    { labelKey: 'docOffer',    color: 'bg-blue-50 text-blue-700',   icon: '🖨️' },
@@ -49,11 +50,7 @@ export default function DocumentsModal({ project, onClose }) {
 
       if (!html) { showToast(t('docNotAvailableOffline'), 'warning'); return }
 
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-      const url  = URL.createObjectURL(blob)
-      const win  = window.open(url, '_blank')
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
-      if (!win) showToast('Allow pop-ups for maistorix.com', 'warning')
+      openPDFViewer(html)
     } catch (e) {
       console.error('[openDoc]', e)
       showToast(t('error'), 'error')
