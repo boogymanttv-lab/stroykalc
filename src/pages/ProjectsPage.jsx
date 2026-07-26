@@ -42,6 +42,8 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
   const [paidMap,        setPaidMap]        = useState({})
   const [photoMap,       setPhotoMap]       = useState({})
   const [pdfLangCtx,     setPdfLangCtx]    = useState(null) // { type, onGenerate }
+  const [shareModal,     setShareModal]     = useState(null) // { url }
+  const [shareCopied,    setShareCopied]    = useState(false)
 
   const proAction = (fn, feature) => isPro ? fn() : setProGateFeature(feature || 'default')
 
@@ -189,12 +191,15 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
       await supabase.from('projects').update({ share_token: token }).eq('id', p.id)
     }
     const url = `${window.location.origin}${window.location.pathname}#share/${token}`
-    try {
-      await navigator.clipboard.writeText(url)
-      alert(`${t('linkCopied')}\n\n${t('linkDesc')}\n\n${url}`)
-    } catch {
-      prompt(t('linkCopied'), url)
-    }
+    setShareCopied(false)
+    setShareModal({ url })
+  }
+
+  async function copyShareUrl() {
+    if (!shareModal) return
+    try { await navigator.clipboard.writeText(shareModal.url) } catch {}
+    setShareCopied(true)
+    setTimeout(() => setShareCopied(false), 2500)
   }
 
   return (
@@ -415,6 +420,38 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
 
       {/* PDF language picker */}
       <PDFLangPicker ctx={pdfLangCtx} onClose={() => setPdfLangCtx(null)} />
+
+      {/* Share modal */}
+      {shareModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+             onClick={() => setShareModal(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5"
+               onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                🔗 {t('shareLink')}
+              </h3>
+              <button onClick={() => setShareModal(null)} className="text-slate-400 hover:text-slate-600 text-lg leading-none">✕</button>
+            </div>
+            <p className="text-xs text-slate-500 mb-3">{t('linkDesc')}</p>
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mb-3">
+              <input
+                readOnly
+                value={shareModal.url}
+                className="flex-1 bg-transparent text-xs text-slate-700 outline-none"
+                onFocus={e => e.target.select()}
+              />
+            </div>
+            <button
+              onClick={copyShareUrl}
+              className="w-full py-2.5 rounded-xl font-semibold text-white text-sm transition-colors
+                         bg-indigo-600 hover:bg-indigo-700 active:scale-[.98]"
+            >
+              {shareCopied ? '✅ ' + t('copied') : '📋 ' + t('copyLink')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
