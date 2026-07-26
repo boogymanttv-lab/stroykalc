@@ -11,6 +11,7 @@ import OverdueAlert from './components/OverdueAlert'
 import SyncStatus from './components/SyncStatus'
 import UpgradePage from './pages/UpgradePage'
 import AdminPage from './pages/AdminPage'
+import OnboardingTour from './components/OnboardingTour'
 import { syncDown } from './lib/syncService'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
@@ -112,6 +113,7 @@ function AppInner() {
           {TABS.map(t => (
             <button
               key={t.id}
+              data-tour={`${t.id}-tab`}
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-3 w-full px-5 py-3 text-sm font-medium
                           border-l-4 transition-all
@@ -143,6 +145,7 @@ function AppInner() {
             </button>
           )}
           <button
+            data-tour="settings-btn"
             onClick={() => setTab('settings')}
             className={`flex items-center gap-2 w-full text-xs font-medium transition-colors
                         ${tab === 'settings' ? 'text-white' : 'text-white/50 hover:text-white'}`}
@@ -211,6 +214,7 @@ function AppInner() {
 
         {/* Views */}
         <main className="flex-1 overflow-hidden flex flex-col">
+          <OnboardingTour />
           <SyncStatus onOnline={() => syncDown(user.id)} />
           {upgradeSuccess && (
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold animate-pulse">
@@ -232,6 +236,7 @@ function AppInner() {
           {TABS.map(t => (
             <button
               key={t.id}
+              data-tour={`${t.id}-tab`}
               onClick={() => setTab(t.id)}
               className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold
                           border-t-2 transition-colors
