@@ -1,85 +1,103 @@
 import { supabase } from './supabase'
+import { db } from './db'
 
 /**
- * Upload an HTML document to Supabase Storage and save a record in the documents table.
- * @param {object} opts
- * @param {string} opts.html       - HTML string to upload
- * @param {string} opts.projectId  - project UUID
- * @param {string} opts.userId     - user UUID
- * @param {'offer'|'contract'} opts.type
- * @param {string} opts.name       - display name (e.g. "Оферта OF-240001")
+ * Upload an HTML document to Supabase Storage, save a DB record, and cache locally for offline.
  */
 export async function saveDocument({ html, projectId, userId, type, name }) {
+  // Always cache locally first (works offline too)
+  const localId = crypto.randomUUID()
+  const localDoc = {
+    id: localId,
+    project_id: projectId,
+    user_id: userId,
+    type,
+    name,
+    storage_path: null,
+    html,
+    created_at: new Date().toISOString(),
+  }
+  await db.documents.put(localDoc)
+
+  // If offline, return local record
+  if (!navigator.onLine) return localDoc
+
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     const filename  = `${userId}/${projectId}/${type}-${timestamp}.html`
     const blob      = new Blob([html], { type: 'text/html;charset=utf-8' })
 
-    // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('documents')
-      .upload(filename, blob, { contentType: 'text/html', upsert: false })
+      .upload(filename, blob, { contentType: 'text/html;charset=utf-8', upsert: false })
 
     if (uploadError) {
       console.error('[saveDocument] upload failed:', uploadError)
-      return null
+      return localDoc
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('documents')
-      .getPublicUrl(filename)
-
-    // Save record
     const { data, error: dbError } = await supabase
       .from('documents')
-      .insert({
-        project_id:   projectId,
-        user_id:      userId,
-        type,
-        name,
-        storage_path: filename,
-      })
+      .insert({ project_id: projectId, user_id: userId, type, name, storage_path: filename })
       .select()
       .single()
 
     if (dbError) {
       console.error('[saveDocument] db insert failed:', dbError)
-      return null
+      return localDoc
     }
 
-    return { ...data, url: publicUrl }
+    // Replace temp local record with real server record (keep html for offline)
+    await db.documents.delete(localId)
+    await db.documents.put({ ...data, html })
+
+    return data
   } catch (e) {
     console.error('[saveDocument] error:', e)
-    return null
+    return localDoc
   }
 }
 
 /**
- * Load all documents for a project
+ * Load all documents for a project.
+ * Online: fetch from Supabase and sync cache.
+ * Offline: read from IndexedDB.
  */
 export async function getProjectDocuments(projectId) {
+  if (!navigator.onLine) {
+    const local = await db.documents
+      .where('project_id').equals(projectId)
+      .toArray()
+    return local.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  }
+
   const { data, error } = await supabase
     .from('documents')
     .select('*')
     .eq('project_id', projectId)
     .order('created_at', { ascending: false })
 
-  if (error) return []
+  if (error) {
+    const local = await db.documents.where('project_id').equals(projectId).toArray()
+    return local.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  }
 
-  // Attach public URLs
-  return data.map(doc => {
-    const { data: { publicUrl } } = supabase.storage
-      .from('documents')
-      .getPublicUrl(doc.storage_path)
-    return { ...doc, url: publicUrl }
-  })
+  // Sync cache — preserve cached html content
+  for (const doc of data) {
+    const existing = await db.documents.get(doc.id)
+    await db.documents.put({ ...doc, html: existing?.html || null })
+  }
+
+  return data
 }
 
 /**
- * Delete a document
+ * Delete a document.
  */
 export async function deleteDocument(doc) {
-  await supabase.storage.from('documents').remove([doc.storage_path])
-  await supabase.from('documents').delete().eq('id', doc.id)
+  await db.documents.delete(doc.id)
+  if (navigator.onLine && doc.storage_path) {
+    await supabase.storage.from('documents').remove([doc.storage_path])
+    await supabase.from('documents').delete().eq('id', doc.id)
+  }
 }

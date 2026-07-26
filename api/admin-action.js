@@ -51,9 +51,9 @@ export default async function handler(req, res) {
       return res.json({ ok: true })
     }
 
-    // ── Get user data (projects + offers) ─────────────────────
+    // ── Get user data (projects + clients + documents) ────────
     if (action === 'get_data') {
-      const [{ data: projects }, { data: clients }] = await Promise.all([
+      const [{ data: projects }, { data: clients }, { data: documents }] = await Promise.all([
         supabase.from('projects')
           .select('id, name, total, status, offer_number, created_at, clients(name)')
           .eq('user_id', userId)
@@ -63,8 +63,17 @@ export default async function handler(req, res) {
           .select('id, name, phone, email')
           .eq('user_id', userId)
           .limit(50),
+        supabase.from('documents')
+          .select('id, project_id, type, name, storage_path, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(100),
       ])
-      return res.json({ projects: projects || [], clients: clients || [] })
+      return res.json({
+        projects:  projects  || [],
+        clients:   clients   || [],
+        documents: documents || [],
+      })
     }
 
     return res.status(400).json({ error: 'Unknown action' })

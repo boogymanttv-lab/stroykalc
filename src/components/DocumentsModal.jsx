@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getProjectDocuments, deleteDocument } from '../lib/documents'
+import { db } from '../lib/db'
+import { supabase } from '../lib/supabase'
 
 const TYPE_LABEL = {
   offer:    { label: 'Оферта',  color: 'bg-blue-50 text-blue-700',   icon: '🖨️' },
@@ -30,16 +32,31 @@ export default function DocumentsModal({ project, onClose }) {
 
   async function openDoc(doc) {
     try {
-      const res  = await fetch(doc.url)
-      const text = await res.text()
-      const blob = new Blob([text], { type: 'text/html;charset=utf-8' })
+      // Try cached HTML first (always available offline)
+      let html = null
+      const cached = await db.documents.get(doc.id)
+      if (cached?.html) {
+        html = cached.html
+      } else if (navigator.onLine && doc.storage_path) {
+        // Fetch from storage and cache
+        const { data: { publicUrl } } = supabase.storage
+          .from('documents').getPublicUrl(doc.storage_path)
+        const res = await fetch(publicUrl)
+        html = await res.text()
+        // Cache for future offline use
+        await db.documents.put({ ...doc, html })
+      }
+
+      if (!html) { alert('Документът не е наличен офлайн.'); return }
+
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
       const url  = URL.createObjectURL(blob)
       const win  = window.open(url, '_blank')
-      // Освобождаваме blob URL след 60 сек (достатъчно за зареждане)
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
       if (!win) alert('Разрешете pop-up-ите за maistorix.com')
-    } catch {
-      window.open(doc.url, '_blank')
+    } catch (e) {
+      console.error('[openDoc]', e)
+      alert('Грешка при отваряне на документа.')
     }
   }
 

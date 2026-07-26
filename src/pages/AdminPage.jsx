@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
 const fmt = n => '€ ' + Number(n || 0).toLocaleString('bg-BG', { minimumFractionDigits: 2 })
@@ -248,14 +249,47 @@ export default function AdminPage() {
                     }
                     <h4 className="font-semibold text-slate-700 text-sm mb-3">👥 Клиенти ({userData.clients?.length || 0})</h4>
                     {userData.clients?.length === 0
-                      ? <p className="text-xs text-slate-400">Няма клиенти</p>
-                      : <div className="space-y-1.5">
+                      ? <p className="text-xs text-slate-400 mb-4">Няма клиенти</p>
+                      : <div className="space-y-1.5 mb-5">
                           {userData.clients.map(c => (
                             <div key={c.id} className="bg-slate-50 rounded-xl px-3 py-2 flex items-center justify-between">
                               <span className="text-xs font-medium text-slate-700">{c.name}</span>
                               <span className="text-[11px] text-slate-400">{c.phone || c.email || ''}</span>
                             </div>
                           ))}
+                        </div>
+                    }
+
+                    <h4 className="font-semibold text-slate-700 text-sm mb-3">📁 Документи ({userData.documents?.length || 0})</h4>
+                    {!userData.documents?.length
+                      ? <p className="text-xs text-slate-400">Няма документи</p>
+                      : <div className="space-y-1.5">
+                          {userData.documents.map(d => {
+                            const publicUrl = d.storage_path
+                              ? supabase.storage.from('documents').getPublicUrl(d.storage_path).data.publicUrl
+                              : null
+                            return (
+                              <div key={d.id} className="bg-slate-50 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="text-xs font-medium text-slate-700 truncate">{d.name}</div>
+                                  <div className="text-[10px] text-slate-400">
+                                    {d.type === 'offer' ? '🖨️ Оферта' : '📄 Договор'}
+                                    {' · '}{new Date(d.created_at).toLocaleDateString('bg-BG')}
+                                  </div>
+                                </div>
+                                {publicUrl && (
+                                  <a
+                                    href={publicUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex-shrink-0 px-2 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition-colors"
+                                  >
+                                    👁 Виж
+                                  </a>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                     }
                   </>
