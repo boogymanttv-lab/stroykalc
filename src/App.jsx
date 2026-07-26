@@ -184,6 +184,7 @@ function AppInner() {
               </button>
             )}
             <button
+              data-tour="settings-btn"
               onClick={() => setTab('settings')}
               className={`text-base transition-opacity ${tab === 'settings' ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
               title="Фирмен профил"

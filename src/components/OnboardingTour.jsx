@@ -87,7 +87,7 @@ export default function OnboardingTour({ onDone }) {
   const s = STEPS[step]
   const isCenter = s.position === 'center' || !rect
 
-  const TOOLTIP_HEIGHT = 180
+  const TOOLTIP_HEIGHT = 220
   const TOOLTIP_WIDTH  = 260
   const pad = 16
 

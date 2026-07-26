@@ -200,7 +200,7 @@ export default function GuidedTour({ setTab, onDone }) {
 
   // Tooltip position — always outside spotlight, clamped to viewport
   const CARD_W = 280
-  const CARD_H = 220
+  const CARD_H = 300
 
   const getCardStyle = () => {
     if (!rect) return {
@@ -266,7 +266,7 @@ export default function GuidedTour({ setTab, onDone }) {
       )}
 
       {/* Tour card */}
-      <div style={getCardStyle()} className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div style={{ ...getCardStyle(), maxHeight: 'calc(100vh - 32px)' }} className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', padding: '14px 16px' }}>
           {/* Progress bar */}
@@ -285,7 +285,7 @@ export default function GuidedTour({ setTab, onDone }) {
         </div>
 
         {/* Body */}
-        <div style={{ padding: '12px 16px' }}>
+        <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1 }}>
           <p style={{ color:'#475569', fontSize:12, lineHeight:1.6, whiteSpace:'pre-line', margin:0 }}>{s.text}</p>
           {s.tip && (
             <div style={{ marginTop:10, padding:'7px 10px', background:'#eef2ff', borderRadius:8, border:'1px solid #c7d2fe' }}>
