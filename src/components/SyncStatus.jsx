@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { flushQueue, flushDocuments, getPendingCount } from '../lib/syncService'
+import { useLang } from '../contexts/LanguageContext'
 
 export default function SyncStatus({ onOnline, userId }) {
+  const { t } = useLang()
   const [online, setOnline]   = useState(navigator.onLine)
   const [pending, setPending] = useState(0)
   const [syncing, setSyncing] = useState(false)
@@ -42,13 +44,20 @@ export default function SyncStatus({ onOnline, userId }) {
     }
   }, [handleOnline, handleOffline, refreshPending])
 
-  // Re-check pending count periodically
   useEffect(() => {
-    const t = setInterval(refreshPending, 5000)
-    return () => clearInterval(t)
+    const timer = setInterval(refreshPending, 5000)
+    return () => clearInterval(timer)
   }, [refreshPending])
 
   if (online && !syncing && !justSynced && pending === 0) return null
+
+  const message = !online
+    ? `${t('offline')}${pending > 0 ? ` · ${pending} ${t('offlineChanges')}` : ` · ${t('offlineSave')}`}`
+    : syncing
+      ? t('syncing')
+      : justSynced
+        ? t('syncDone')
+        : `${pending} ${t('pendingChanges')}`
 
   return (
     <div className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold flex-shrink-0 ${
@@ -63,16 +72,7 @@ export default function SyncStatus({ onOnline, userId }) {
       <span className="text-base">
         {!online ? '📵' : syncing ? '🔄' : justSynced ? '✅' : '⏳'}
       </span>
-      <span>
-        {!online
-          ? `Офлайн режим${pending > 0 ? ` · ${pending} несинхронизирани промени` : ' · Промените ще се запазят при свързване'}`
-          : syncing
-            ? 'Синхронизиране...'
-            : justSynced
-              ? 'Синхронизирано успешно!'
-              : `${pending} промени чакат синхронизиране`
-        }
-      </span>
+      <span>{message}</span>
     </div>
   )
 }

@@ -1,32 +1,35 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-
-const FEATURES_FREE = [
-  'Неограничени проекти',
-  'Калкулатор с 370+ услуги',
-  'PDF оферти (с watermark)',
-  'Управление на клиенти',
-  'Основни плащания',
-]
-
-const FEATURES_PRO = [
-  'PDF оферти БЕЗ watermark',
-  'Договори',
-  'Клиентски портал с QR код',
-  'Разходи и реална печалба',
-  'Снимки по проекти',
-  'Отчети + CSV/Excel експорт',
-  'Задачи по проект',
-  'Документи по проект (офлайн)',
-  'Офлайн режим',
-  'Приоритетна поддръжка',
-]
+import { useLang } from '../contexts/LanguageContext'
 
 export default function UpgradePage() {
   const { user, profile } = useAuth()
-  const [loading,  setLoading]  = useState(null) // 'now' | 'trial' | null
-  const [error,    setError]    = useState('')
-  const [billing,  setBilling]  = useState('monthly') // 'monthly' | 'yearly'
+  const { t } = useLang()
+  const [loading,       setLoading]       = useState(null) // 'now' | 'trial' | null
+  const [error,         setError]         = useState('')
+  const [billing,       setBilling]       = useState('monthly')
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  const FEATURES_FREE = [
+    t('featUnlimitedProjects'),
+    t('featCalc'),
+    t('featNoPdf'),
+    t('featClients'),
+    t('featPayments'),
+  ]
+
+  const FEATURES_PRO = [
+    t('featPdfNo'),
+    t('featContracts'),
+    t('featQR'),
+    t('featExpenses'),
+    t('featPhotos'),
+    t('featReports'),
+    t('featTasks'),
+    t('featDocuments'),
+    t('featOffline'),
+    t('featSupport'),
+  ]
 
   async function handleUpgrade(trial = false) {
     setLoading(trial ? 'trial' : 'now')
@@ -41,7 +44,7 @@ export default function UpgradePage() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        setError(data.error || 'Грешка при създаване на сесия')
+        setError(data.error || t('error'))
         setLoading(null)
       }
     } catch (e) {
@@ -49,7 +52,6 @@ export default function UpgradePage() {
       setLoading(null)
     }
   }
-    const [portalLoading, setPortalLoading] = useState(false)
 
   async function handleManageSubscription() {
     setPortalLoading(true)
@@ -62,7 +64,7 @@ export default function UpgradePage() {
       const data = await res.json()
       if (data.url) window.location.href = data.url
     } catch (e) {
-      alert('Грешка: ' + e.message)
+      alert(t('error') + ': ' + e.message)
     }
     setPortalLoading(false)
   }
@@ -74,15 +76,15 @@ export default function UpgradePage() {
       <div className="flex-1 overflow-y-auto thin-scroll p-4 max-w-xl mx-auto w-full">
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🌟</div>
-          <h2 className="text-2xl font-black text-slate-800 mb-2">Вие сте PRO!</h2>
-          <p className="text-slate-500 text-sm mb-6">Имате достъп до всички функции без ограничения.</p>
+          <h2 className="text-2xl font-black text-slate-800 mb-2">{t('youArePro')}</h2>
+          <p className="text-slate-500 text-sm mb-6">{t('proDesc')}</p>
           <div className="inline-block px-6 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-violet-700 text-white font-bold text-sm mb-8">
-            ✅ Активен PRO план
+            {t('proActive')}
           </div>
 
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm text-left">
-            <h3 className="font-bold text-slate-700 text-sm mb-1">Управление на абонамента</h3>
-            <p className="text-xs text-slate-400 mb-4">Промяна на карта, отказ или преглед на фактури.</p>
+            <h3 className="font-bold text-slate-700 text-sm mb-1">{t('manageSubscription')}</h3>
+            <p className="text-xs text-slate-400 mb-4">{t('manageSubDesc')}</p>
             <button
               onClick={handleManageSubscription}
               disabled={portalLoading}
@@ -91,7 +93,7 @@ export default function UpgradePage() {
                          hover:bg-slate-50 active:scale-[.98] transition-all
                          disabled:opacity-60"
             >
-              {portalLoading ? '⏳ Зареждане...' : '⚙️ Управление на абонамента'}
+              {portalLoading ? t('loadingPortal') : t('manageSubscription')}
             </button>
           </div>
         </div>
@@ -106,10 +108,8 @@ export default function UpgradePage() {
         {/* Hero */}
         <div className="text-center pt-4 pb-2">
           <div className="text-5xl mb-3">🚀</div>
-          <h1 className="text-2xl font-black text-slate-800 mb-2">Надградете до PRO</h1>
-          <p className="text-slate-500 text-sm max-w-xs mx-auto">
-            Премахнете watermark-а и отключете всички професионални функции
-          </p>
+          <h1 className="text-2xl font-black text-slate-800 mb-2">{t('upgradeTitle')}</h1>
+          <p className="text-slate-500 text-sm max-w-xs mx-auto">{t('upgradeDesc')}</p>
         </div>
 
         {/* Pricing card */}
@@ -126,7 +126,7 @@ export default function UpgradePage() {
                   : 'text-white/70 hover:text-white'
               }`}
             >
-              Месечен
+              {t('monthly')}
             </button>
             <button
               onClick={() => setBilling('yearly')}
@@ -136,7 +136,7 @@ export default function UpgradePage() {
                   : 'text-white/70 hover:text-white'
               }`}
             >
-              Годишен
+              {t('yearly')}
               <span className="absolute -top-2 -right-1 bg-amber-400 text-amber-900 text-[9px] font-black px-1.5 py-0.5 rounded-full">
                 -30%
               </span>
@@ -148,17 +148,17 @@ export default function UpgradePage() {
             <>
               <div className="flex items-end justify-center gap-1 mb-1">
                 <span className="text-5xl font-black">€2.99</span>
-                <span className="text-indigo-200 mb-2">/месец</span>
+                <span className="text-indigo-200 mb-2">{t('perMonth')}</span>
               </div>
-              <div className="text-indigo-200 text-xs mb-5">€35.88/година</div>
+              <div className="text-indigo-200 text-xs mb-5">{t('monthlyYearlyNote')}</div>
             </>
           ) : (
             <>
               <div className="flex items-end justify-center gap-1 mb-1">
                 <span className="text-5xl font-black">€24.99</span>
-                <span className="text-indigo-200 mb-2">/година</span>
+                <span className="text-indigo-200 mb-2">{t('perYear')}</span>
               </div>
-              <div className="text-indigo-200 text-xs mb-5">€2.08/месец · 2 месеца безплатно</div>
+              <div className="text-indigo-200 text-xs mb-5">{t('yearlyPerMonthNote')}</div>
             </>
           )}
 
@@ -169,7 +169,7 @@ export default function UpgradePage() {
                        hover:bg-indigo-50 active:scale-[.98] transition-all text-sm shadow-lg
                        disabled:opacity-70 mb-2"
           >
-            {loading === 'now' ? '⏳ Пренасочване...' : '⚡ Надградете сега'}
+            {loading === 'now' ? t('redirecting') : t('upgradeNow')}
           </button>
           <button
             onClick={() => handleUpgrade(true)}
@@ -178,17 +178,17 @@ export default function UpgradePage() {
                        hover:bg-white/10 active:scale-[.98] transition-all text-sm
                        disabled:opacity-70"
           >
-            {loading === 'trial' ? '⏳ Пренасочване...' : '🎁 Тествайте 3 дни безплатно'}
+            {loading === 'trial' ? t('redirecting') : t('trialBtn')}
           </button>
           {error && <p className="text-red-300 text-xs mt-2">{error}</p>}
-          <p className="text-xs text-indigo-200 mt-3">Отказ по всяко време · Без скрити такси · За цената на кафе</p>
+          <p className="text-xs text-indigo-200 mt-3">{t('cancelAnytime')}</p>
         </div>
 
         {/* Feature comparison */}
         <div className="grid grid-cols-2 gap-3">
           {/* Free */}
           <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Безплатно</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t('freeFeatures')}</div>
             <div className="space-y-2">
               {FEATURES_FREE.map(f => (
                 <div key={f} className="flex items-start gap-2 text-xs text-slate-600">
@@ -201,7 +201,7 @@ export default function UpgradePage() {
 
           {/* Pro */}
           <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 shadow-sm">
-            <div className="text-xs font-bold uppercase tracking-wider text-indigo-500 mb-3">PRO ⚡</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-indigo-500 mb-3">{t('proFeatures')}</div>
             <div className="space-y-2">
               {FEATURES_PRO.map(f => (
                 <div key={f} className="flex items-start gap-2 text-xs text-indigo-700 font-medium">
@@ -213,13 +213,10 @@ export default function UpgradePage() {
           </div>
         </div>
 
-        {/* Testimonial / value prop */}
+        {/* Testimonial */}
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <p className="text-sm text-amber-800 italic">
-            „Изпълнител с 3 проекта по €3,000 прави €9,000 на месец.
-            €2.99 за инструмента е буквално по-малко от едно кафе."
-          </p>
-          <p className="text-xs text-amber-600 mt-2 font-semibold">— Екипът на Maistorix</p>
+          <p className="text-sm text-amber-800 italic">{t('testimonialText')}</p>
+          <p className="text-xs text-amber-600 mt-2 font-semibold">{t('testimonialAuthor')}</p>
         </div>
 
       </div>

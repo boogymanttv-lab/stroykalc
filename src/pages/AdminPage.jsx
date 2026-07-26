@@ -1,26 +1,35 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LanguageContext'
 import { supabase } from '../lib/supabase'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
 const fmt = n => '€ ' + Number(n || 0).toLocaleString('bg-BG', { minimumFractionDigits: 2 })
 
-const STATUS_LABEL = {
-  active:               { label: 'Активен',       color: 'bg-emerald-100 text-emerald-700' },
-  suspended:            { label: 'Спрян',          color: 'bg-amber-100 text-amber-700' },
-  pending_reactivation: { label: 'Чака реакт.',   color: 'bg-orange-100 text-orange-700' },
-  pending_delete:       { label: 'Чака изтриване', color: 'bg-red-100 text-red-600' },
+const STATUS_KEY = {
+  active:               'statusActive',
+  suspended:            'statusSuspended',
+  pending_reactivation: 'statusPendingReactivation',
+  pending_delete:       'statusPendingDelete',
+}
+
+const STATUS_COLOR = {
+  active:               'bg-emerald-100 text-emerald-700',
+  suspended:            'bg-amber-100 text-amber-700',
+  pending_reactivation: 'bg-orange-100 text-orange-700',
+  pending_delete:       'bg-red-100 text-red-600',
 }
 
 export default function AdminPage() {
   const { user } = useAuth()
+  const { t } = useLang()
   const [users,   setUsers]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
   const [filter,  setFilter]  = useState('all')
   const [search,  setSearch]  = useState('')
-  const [viewUser, setViewUser] = useState(null) // user data modal
-  const [userData, setUserData] = useState(null)
+  const [viewUser, setViewUser]   = useState(null)
+  const [userData, setUserData]   = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
 
   useEffect(() => { loadUsers() }, [])
@@ -37,8 +46,12 @@ export default function AdminPage() {
   }
 
   async function adminAction(action, userId) {
-    const labels = { suspend: 'спирате', delete: 'ИЗТРИЕТЕ ЗАВИНАГИ', restore: 'възстановите' }
-    if (!confirm(`Сигурни ли сте, че искате да ${labels[action]} този акаунт?`)) return
+    const confirmKey = {
+      suspend: 'adminConfirmSuspend',
+      delete:  'adminConfirmDelete',
+      restore: 'adminConfirmRestore',
+    }[action]
+    if (!confirm(t(confirmKey))) return
     setActionLoading(userId + action)
     const res  = await fetch('/api/admin-action', {
       method: 'POST',
@@ -50,7 +63,7 @@ export default function AdminPage() {
     if (data.ok) {
       await loadUsers()
     } else {
-      alert('Грешка: ' + data.error)
+      alert(t('error') + ': ' + data.error)
     }
   }
 
@@ -76,12 +89,12 @@ export default function AdminPage() {
     return matchFilter && matchSearch
   })
 
-  const proCount      = users.filter(u => u.plan === 'pro').length
-  const freeCount     = users.filter(u => u.plan === 'free').length
-  const flaggedCount  = users.filter(u => ['suspended','pending_reactivation','pending_delete'].includes(u.account_status)).length
+  const proCount     = users.filter(u => u.plan === 'pro').length
+  const freeCount    = users.filter(u => u.plan === 'free').length
+  const flaggedCount = users.filter(u => ['suspended','pending_reactivation','pending_delete'].includes(u.account_status)).length
 
   function exportCSV() {
-    const rows = [['Имейл', 'Иmе', 'Фирма', 'План', 'Статус', 'Регистриран']]
+    const rows = [['Email', 'Name', 'Company', 'Plan', 'Status', 'Created']]
     filtered.forEach(u => rows.push([
       u.email, u.full_name || '', u.company_name || '', u.plan,
       u.account_status || 'active', new Date(u.created_at).toLocaleDateString('bg-BG'),
@@ -94,8 +107,12 @@ export default function AdminPage() {
     URL.revokeObjectURL(url)
   }
 
-  if (loading) return <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Зареждане...</div>
-  if (error)   return <div className="flex-1 flex items-center justify-center text-red-400 text-sm">Грешка: {error}</div>
+  if (loading) return (
+    <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">{t('loading')}</div>
+  )
+  if (error) return (
+    <div className="flex-1 flex items-center justify-center text-red-400 text-sm">{t('error')}: {error}</div>
+  )
 
   return (
     <div className="flex-1 overflow-y-auto thin-scroll p-4 max-w-4xl mx-auto w-full">
@@ -105,7 +122,7 @@ export default function AdminPage() {
         <div className="grid grid-cols-4 gap-3">
           <div className="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm">
             <div className="text-2xl font-black text-slate-800">{users.length}</div>
-            <div className="text-[11px] text-slate-400 mt-1">Общо</div>
+            <div className="text-[11px] text-slate-400 mt-1">{t('adminTotal')}</div>
           </div>
           <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-center shadow-sm">
             <div className="text-2xl font-black text-indigo-600">{proCount}</div>
@@ -117,17 +134,17 @@ export default function AdminPage() {
           </div>
           <div className={`border rounded-2xl p-4 text-center shadow-sm ${flaggedCount > 0 ? 'bg-red-50 border-red-200' : 'bg-white border-slate-100'}`}>
             <div className={`text-2xl font-black ${flaggedCount > 0 ? 'text-red-600' : 'text-slate-400'}`}>{flaggedCount}</div>
-            <div className={`text-[11px] mt-1 ${flaggedCount > 0 ? 'text-red-400' : 'text-slate-400'}`}>Маркирани</div>
+            <div className={`text-[11px] mt-1 ${flaggedCount > 0 ? 'text-red-400' : 'text-slate-400'}`}>{t('adminFlagged')}</div>
           </div>
         </div>
 
         {/* Filters */}
         <div className="flex gap-2 flex-wrap items-center">
           {[
-            { id: 'all', label: 'Всички' },
-            { id: 'pro', label: '⚡ PRO' },
-            { id: 'free', label: 'Free' },
-            { id: 'flagged', label: '🚩 Маркирани' },
+            { id: 'all',     label: t('all') },
+            { id: 'pro',     label: '⚡ PRO' },
+            { id: 'free',    label: 'Free' },
+            { id: 'flagged', label: t('adminFilterFlagged') },
           ].map(f => (
             <button key={f.id} onClick={() => setFilter(f.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors
@@ -136,20 +153,21 @@ export default function AdminPage() {
             </button>
           ))}
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Търси по имейл или фирма..."
+            placeholder={t('adminSearch')}
             className="flex-1 min-w-[180px] px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" />
           <button onClick={exportCSV}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100">
-            ⬇ CSV
+            {t('adminExportCSV')}
           </button>
         </div>
 
         {/* Table */}
         <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
           {filtered.length === 0
-            ? <div className="text-center py-10 text-slate-400 text-sm">Няма потребители</div>
+            ? <div className="text-center py-10 text-slate-400 text-sm">{t('adminNoUsers')}</div>
             : filtered.map((u, i) => {
-              const st = STATUS_LABEL[u.account_status || 'active'] || STATUS_LABEL.active
+              const statusKey = STATUS_KEY[u.account_status || 'active'] || 'statusActive'
+              const statusColor = STATUS_COLOR[u.account_status || 'active'] || STATUS_COLOR.active
               const isMe = u.email === ADMIN_EMAIL
               return (
                 <div key={u.id} className={`border-b border-slate-50 p-4 ${i % 2 === 0 ? '' : 'bg-slate-50/40'}`}>
@@ -161,20 +179,22 @@ export default function AdminPage() {
                         {u.plan === 'pro'
                           ? <span className="px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold">⚡ PRO</span>
                           : <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px]">Free</span>}
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${st.color}`}>{st.label}</span>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${statusColor}`}>
+                          {t(statusKey)}
+                        </span>
                       </div>
                       {(u.company_name || u.full_name) && (
                         <div className="text-[11px] text-slate-400 mt-0.5">{u.company_name || u.full_name}</div>
                       )}
                       {u.suspension_reason && (
-                        <div className="text-[11px] text-amber-600 mt-0.5">Причина: {u.suspension_reason}</div>
+                        <div className="text-[11px] text-amber-600 mt-0.5">{t('adminSuspendReason')} {u.suspension_reason}</div>
                       )}
                       {u.delete_reason && (
-                        <div className="text-[11px] text-red-500 mt-0.5">Иска изтриване: {u.delete_reason}</div>
+                        <div className="text-[11px] text-red-500 mt-0.5">{t('adminWantsDelete')} {u.delete_reason}</div>
                       )}
                       <div className="text-[11px] text-slate-300 mt-0.5">
                         {new Date(u.created_at).toLocaleDateString('bg-BG')}
-                        {u.suspended_until && ` · спрян до ${new Date(u.suspended_until).toLocaleDateString('bg-BG')}`}
+                        {u.suspended_until && ` · ${t('adminSuspendedUntil')} ${new Date(u.suspended_until).toLocaleDateString('bg-BG')}`}
                       </div>
                     </div>
 
@@ -183,26 +203,26 @@ export default function AdminPage() {
                       <div className="flex gap-1.5 flex-wrap">
                         <button onClick={() => viewUserData(u)}
                           className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition-colors">
-                          👁 Данни
+                          {t('adminViewData')}
                         </button>
                         {(u.account_status || 'active') === 'active' && (
                           <button onClick={() => adminAction('suspend', u.id)}
                             disabled={actionLoading === u.id + 'suspend'}
                             className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-100 transition-colors disabled:opacity-50">
-                            ⏸ Спри
+                            {t('adminSuspend')}
                           </button>
                         )}
                         {['suspended','pending_reactivation','pending_delete'].includes(u.account_status) && (
                           <button onClick={() => adminAction('restore', u.id)}
                             disabled={actionLoading === u.id + 'restore'}
                             className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 transition-colors disabled:opacity-50">
-                            ✅ Възстанови
+                            {t('adminRestore')}
                           </button>
                         )}
                         <button onClick={() => adminAction('delete', u.id)}
                           disabled={actionLoading === u.id + 'delete'}
                           className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-colors disabled:opacity-50">
-                          🗑 Изтрий
+                          {t('adminDelete')}
                         </button>
                       </div>
                     )}
@@ -212,7 +232,7 @@ export default function AdminPage() {
             })
           }
         </div>
-        <p className="text-center text-xs text-slate-300">{filtered.length} потребители показани</p>
+        <p className="text-center text-xs text-slate-300">{filtered.length} {t('adminUsersShown')}</p>
       </div>
 
       {/* User data modal */}
@@ -222,17 +242,19 @@ export default function AdminPage() {
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-slate-800 text-sm">{viewUser.email}</h3>
-                <p className="text-xs text-slate-400">{viewUser.company_name || viewUser.full_name || 'Няма фирмени данни'}</p>
+                <p className="text-xs text-slate-400">{viewUser.company_name || viewUser.full_name || t('adminNoCompanyData')}</p>
               </div>
               <button onClick={() => setViewUser(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
             </div>
             <div className="p-5">
               {!userData
-                ? <div className="text-center py-8 text-slate-400 text-sm">Зареждане...</div>
+                ? <div className="text-center py-8 text-slate-400 text-sm">{t('loading')}</div>
                 : <>
-                    <h4 className="font-semibold text-slate-700 text-sm mb-3">📋 Проекти и оферти ({userData.projects?.length || 0})</h4>
+                    <h4 className="font-semibold text-slate-700 text-sm mb-3">
+                      {t('adminProjects')} ({userData.projects?.length || 0})
+                    </h4>
                     {userData.projects?.length === 0
-                      ? <p className="text-xs text-slate-400 mb-4">Няма проекти</p>
+                      ? <p className="text-xs text-slate-400 mb-4">{t('adminNoProjects')}</p>
                       : <div className="space-y-2 mb-5">
                           {userData.projects.map(p => (
                             <div key={p.id} className="bg-slate-50 rounded-xl p-3">
@@ -241,15 +263,17 @@ export default function AdminPage() {
                                 <span className="text-xs font-bold text-indigo-600">{fmt(p.total)}</span>
                               </div>
                               <div className="text-[11px] text-slate-400 mt-0.5">
-                                {p.offer_number} · {p.clients?.name || 'Без клиент'} · {new Date(p.created_at).toLocaleDateString('bg-BG')}
+                                {p.offer_number} · {p.clients?.name || t('noClientName')} · {new Date(p.created_at).toLocaleDateString('bg-BG')}
                               </div>
                             </div>
                           ))}
                         </div>
                     }
-                    <h4 className="font-semibold text-slate-700 text-sm mb-3">👥 Клиенти ({userData.clients?.length || 0})</h4>
+                    <h4 className="font-semibold text-slate-700 text-sm mb-3">
+                      {t('adminClients')} ({userData.clients?.length || 0})
+                    </h4>
                     {userData.clients?.length === 0
-                      ? <p className="text-xs text-slate-400 mb-4">Няма клиенти</p>
+                      ? <p className="text-xs text-slate-400 mb-4">{t('adminNoClients')}</p>
                       : <div className="space-y-1.5 mb-5">
                           {userData.clients.map(c => (
                             <div key={c.id} className="bg-slate-50 rounded-xl px-3 py-2 flex items-center justify-between">
@@ -260,9 +284,11 @@ export default function AdminPage() {
                         </div>
                     }
 
-                    <h4 className="font-semibold text-slate-700 text-sm mb-3">📁 Документи ({userData.documents?.length || 0})</h4>
+                    <h4 className="font-semibold text-slate-700 text-sm mb-3">
+                      {t('adminDocuments')} ({userData.documents?.length || 0})
+                    </h4>
                     {!userData.documents?.length
-                      ? <p className="text-xs text-slate-400">Няма документи</p>
+                      ? <p className="text-xs text-slate-400">{t('adminNoDocuments')}</p>
                       : <div className="space-y-1.5">
                           {userData.documents.map(d => {
                             const publicUrl = d.storage_path
@@ -273,7 +299,7 @@ export default function AdminPage() {
                                 <div className="min-w-0">
                                   <div className="text-xs font-medium text-slate-700 truncate">{d.name}</div>
                                   <div className="text-[10px] text-slate-400">
-                                    {d.type === 'offer' ? '🖨️ Оферта' : '📄 Договор'}
+                                    {d.type === 'offer' ? t('adminDocOffer') : t('adminDocContract')}
                                     {' · '}{new Date(d.created_at).toLocaleDateString('bg-BG')}
                                   </div>
                                 </div>
@@ -284,7 +310,7 @@ export default function AdminPage() {
                                     rel="noopener noreferrer"
                                     className="flex-shrink-0 px-2 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition-colors"
                                   >
-                                    👁 Виж
+                                    {t('adminViewLink')}
                                   </a>
                                 )}
                               </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { LanguageProvider, useLang } from './contexts/LanguageContext'
 import AuthPage from './pages/AuthPage'
 import SettingsPage from './pages/SettingsPage'
 import ClientsPage from './pages/ClientsPage'
@@ -16,39 +17,47 @@ import { syncDown } from './lib/syncService'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
 
-const TABS = [
-  { id: 'calc',     icon: '🧮', label: 'Калкулатор' },
-  { id: 'projects', icon: '📁', label: 'Проекти'    },
-  { id: 'clients',  icon: '👥', label: 'Клиенти'    },
-  { id: 'reports',  icon: '📊', label: 'Отчети'     },
-  { id: 'upgrade',  icon: '⚡', label: 'PRO'        },
-]
-
 export default function App() {
   return (
     <AuthProvider>
-      <AppInner />
+      <LanguageProvider>
+        <AppInner />
+      </LanguageProvider>
     </AuthProvider>
   )
 }
 
+function LangToggle() {
+  const { lang, setLang } = useLang()
+  return (
+    <button
+      onClick={() => setLang(lang === 'bg' ? 'en' : 'bg')}
+      className="text-xs font-bold px-2 py-1 rounded-lg bg-white/15 hover:bg-white/25 transition-colors"
+      title="Switch language / Смени езика"
+    >
+      {lang === 'bg' ? '🇬🇧 EN' : '🇧🇬 BG'}
+    </button>
+  )
+}
+
 function CookieBanner() {
+  const { t } = useLang()
   const [visible, setVisible] = useState(() => !localStorage.getItem('cookie_ok'))
   if (!visible) return null
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 text-white px-4 py-3
                     flex flex-col sm:flex-row items-start sm:items-center gap-3 shadow-2xl">
       <p className="text-xs text-slate-300 flex-1">
-        🍪 Използваме само технически необходими бисквитки за работата на приложението.{' '}
+        {t('cookieText')}{' '}
         <a href="/privacy.html" target="_blank" rel="noopener noreferrer"
-           className="underline text-indigo-300">Научи повече</a>
+           className="underline text-indigo-300">{t('cookieLearnMore')}</a>
       </p>
       <button
         onClick={() => { localStorage.setItem('cookie_ok', '1'); setVisible(false) }}
         className="flex-shrink-0 px-4 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600
                    text-white text-xs font-semibold transition-colors"
       >
-        Разбрах
+        {t('cookieOk')}
       </button>
     </div>
   )
@@ -56,6 +65,7 @@ function CookieBanner() {
 
 function AppInner() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth()
+  const { t, lang } = useLang()
   const urlParams = new URLSearchParams(window.location.search)
   const shortcut  = urlParams.get('shortcut')
   const [tab, setTab] = useState(shortcut || 'calc')
@@ -66,16 +76,13 @@ function AppInner() {
     return <SharePage token={hash.slice('#share/'.length)} />
   }
 
-  // calcKey forces Calculator to remount when switching projects
   const [calcKey,       setCalcKey]       = useState(0)
   const [editProjectId, setEditProjectId] = useState(null)
 
-  // Sync on login and when coming back online
   useEffect(() => {
     if (user) syncDown(user.id)
   }, [user])
 
-  // Handle Stripe redirect back after payment
   const [upgradeSuccess, setUpgradeSuccess] = useState(false)
   useEffect(() => {
     if (window.location.search.includes('upgraded=true')) {
@@ -92,7 +99,7 @@ function AppInner() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="text-5xl mb-3">🏗️</div>
-          <p className="text-slate-400 text-sm animate-pulse">Зареждане...</p>
+          <p className="text-slate-400 text-sm animate-pulse">{t('loading')}</p>
         </div>
       </div>
     )
@@ -102,21 +109,27 @@ function AppInner() {
 
   const displayName = profile?.full_name || profile?.company_name || user.email
 
-  /** Open an existing project in Calculator */
   function openProject(id) {
     setEditProjectId(id)
     setCalcKey(k => k + 1)
     setTab('calc')
   }
 
-  /** Start a brand-new blank Calculator */
   function newProject() {
     setEditProjectId(null)
     setCalcKey(k => k + 1)
     setTab('calc')
   }
 
-  const tabLabel = tab === 'settings' ? 'Фирмен профил'
+  const TABS = [
+    { id: 'calc',     icon: '🧮', label: t('navCalc') },
+    { id: 'projects', icon: '📁', label: t('navProjects') },
+    { id: 'clients',  icon: '👥', label: t('navClients') },
+    { id: 'reports',  icon: '📊', label: t('navReports') },
+    { id: 'upgrade',  icon: '⚡', label: 'PRO' },
+  ]
+
+  const tabLabel = tab === 'settings' ? t('navSettings')
     : TABS.find(t => t.id === tab)?.label || ''
   const tabIcon  = tab === 'settings' ? '⚙️'
     : TABS.find(t => t.id === tab)?.icon || ''
@@ -135,24 +148,24 @@ function AppInner() {
         </div>
 
         <nav className="flex-1 pt-2">
-          {TABS.map(t => (
+          {TABS.map(tb => (
             <button
-              key={t.id}
-              data-tour={`${t.id}-tab`}
-              onClick={() => setTab(t.id)}
+              key={tb.id}
+              data-tour={`${tb.id}-tab`}
+              onClick={() => setTab(tb.id)}
               className={`flex items-center gap-3 w-full px-5 py-3 text-sm font-medium
                           border-l-4 transition-all
-                          ${t.id === 'upgrade'
+                          ${tb.id === 'upgrade'
                             ? tab === 'upgrade'
                               ? 'border-amber-400 bg-amber-400/20 text-amber-300'
                               : 'border-transparent text-amber-300/80 hover:bg-amber-400/10 hover:text-amber-300'
-                            : tab === t.id
+                            : tab === tb.id
                               ? 'border-white bg-white/15 text-white'
                               : 'border-transparent text-white/60 hover:bg-white/8 hover:text-white'}`}
             >
-              <span className="text-lg">{t.icon}</span>
-              {t.label}
-              {t.id === 'upgrade' && profile?.plan !== 'pro' && (
+              <span className="text-lg">{tb.icon}</span>
+              {tb.label}
+              {tb.id === 'upgrade' && profile?.plan !== 'pro' && (
                 <span className="ml-auto text-[9px] bg-amber-400 text-amber-900 font-black px-1.5 py-0.5 rounded-full">NEW</span>
               )}
             </button>
@@ -166,7 +179,7 @@ function AppInner() {
               className={`flex items-center gap-2 w-full text-xs font-medium transition-colors
                           ${tab === 'admin' ? 'text-white' : 'text-white/50 hover:text-white'}`}
             >
-              🛡️ Админ панел
+              🛡️ {lang === 'en' ? 'Admin panel' : 'Админ панел'}
             </button>
           )}
           <button
@@ -175,14 +188,17 @@ function AppInner() {
             className={`flex items-center gap-2 w-full text-xs font-medium transition-colors
                         ${tab === 'settings' ? 'text-white' : 'text-white/50 hover:text-white'}`}
           >
-            ⚙️ Фирмен профил
+            ⚙️ {lang === 'en' ? 'Company profile' : 'Фирмен профил'}
           </button>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-2 w-full text-xs text-white/50 hover:text-white transition-colors"
-          >
-            🚪 Изход
-          </button>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={signOut}
+              className="flex items-center gap-2 text-xs text-white/50 hover:text-white transition-colors"
+            >
+              🚪 {t('signOut').replace('🚪 ', '')}
+            </button>
+            <LangToggle />
+          </div>
         </div>
       </aside>
 
@@ -194,14 +210,15 @@ function AppInner() {
                            text-white px-4 py-3 flex-shrink-0 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-black">🏗️ Maistorix</h1>
-            <p className="text-xs text-white/70 truncate max-w-[175px]">{displayName}</p>
+            <p className="text-xs text-white/70 truncate max-w-[140px]">{displayName}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <LangToggle />
             {user?.email === ADMIN_EMAIL && (
               <button
                 onClick={() => setTab('admin')}
                 className={`text-base transition-opacity ${tab === 'admin' ? 'opacity-100' : 'opacity-60'}`}
-                title="Админ"
+                title="Admin"
               >
                 🛡️
               </button>
@@ -210,12 +227,12 @@ function AppInner() {
               data-tour="settings-btn"
               onClick={() => setTab('settings')}
               className={`text-base transition-opacity ${tab === 'settings' ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
-              title="Фирмен профил"
+              title={t('navSettings')}
             >
               ⚙️
             </button>
             <button onClick={signOut} className="text-white/60 text-xs hover:text-white">
-              Изход
+              {lang === 'en' ? 'Out' : 'Изход'}
             </button>
           </div>
         </header>
@@ -233,7 +250,7 @@ function AppInner() {
               className="text-sm px-4 py-2 rounded-xl bg-slate-100 text-slate-600
                          font-semibold hover:bg-slate-200 transition-colors"
             >
-              + Нов проект
+              + {lang === 'en' ? 'New project' : 'Нов проект'}
             </button>
           )}
         </div>
@@ -244,7 +261,7 @@ function AppInner() {
           <SyncStatus onOnline={() => syncDown(user.id)} userId={user.id} />
           {upgradeSuccess && (
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold animate-pulse">
-              🎉 Добре дошли в PRO! Всички функции са отключени.
+              🎉 {lang === 'en' ? 'Welcome to PRO! All features unlocked.' : 'Добре дошли в PRO! Всички функции са отключени.'}
             </div>
           )}
           <OverdueAlert onGoToProject={id => { openProject(id) }} />
@@ -259,23 +276,23 @@ function AppInner() {
 
         {/* Mobile bottom nav */}
         <nav className="md:hidden flex border-t border-slate-100 bg-white flex-shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
-          {TABS.map(t => (
+          {TABS.map(tb => (
             <button
-              key={t.id}
-              data-tour={`${t.id}-tab`}
-              onClick={() => setTab(t.id)}
+              key={tb.id}
+              data-tour={`${tb.id}-tab`}
+              onClick={() => setTab(tb.id)}
               className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold
                           border-t-2 transition-colors
-                          ${t.id === 'upgrade'
+                          ${tb.id === 'upgrade'
                             ? tab === 'upgrade'
                               ? 'border-amber-400 text-amber-500'
                               : 'border-transparent text-amber-400'
-                            : tab === t.id
+                            : tab === tb.id
                               ? 'border-indigo-600 text-indigo-600'
                               : 'border-transparent text-slate-400'}`}
             >
-              <span className="text-xl leading-none">{t.icon}</span>
-              {t.label}
+              <span className="text-xl leading-none">{tb.icon}</span>
+              {tb.label}
             </button>
           ))}
         </nav>
@@ -287,35 +304,21 @@ function AppInner() {
 }
 
 function ReportsGate({ profile, onGoUpgrade }) {
+  const { t } = useLang()
   if (profile?.plan === 'pro') return <ReportsPage />
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
       <div className="text-6xl mb-4">📊</div>
-      <h2 className="text-xl font-bold text-slate-700 mb-2">Отчети — PRO функция</h2>
-      <p className="text-slate-400 text-sm max-w-xs mb-6">
-        Пълни отчети, приходи по месеци, CSV/Excel експорт — достъпни с PRO план.
-      </p>
+      <h2 className="text-xl font-bold text-slate-700 mb-2">{t('reportsProOnly')}</h2>
+      <p className="text-slate-400 text-sm max-w-xs mb-6">{t('reportsProDesc')}</p>
       <button
         onClick={onGoUpgrade}
         className="px-6 py-3 rounded-xl font-bold text-white text-sm
                    bg-gradient-to-r from-indigo-600 to-violet-700
                    hover:opacity-90 active:scale-[.98] transition-all shadow-sm"
       >
-        ⚡ Надградете за €2.99/месец
+        ⚡ {t('upgradeNow').replace('⚡ ', '')} €2.99/{t('perMonth').replace('/', '')}
       </button>
-    </div>
-  )
-}
-
-function Placeholder({ icon, title, text }) {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-      <div className="text-6xl mb-4">{icon}</div>
-      <h2 className="text-xl font-bold text-slate-700 mb-2">{title}</h2>
-      <p className="text-slate-400 text-sm max-w-xs">{text}</p>
-      <div className="mt-6 px-4 py-2 rounded-full bg-indigo-50 text-indigo-600 text-xs font-semibold">
-        🚧 Скоро
-      </div>
     </div>
   )
 }

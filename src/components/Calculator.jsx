@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LanguageContext'
 import { supabase } from '../lib/supabase'
 import { db } from '../lib/db'
 import { offlineInsert, offlineUpdate } from '../lib/syncService'
 import { generateOfferPDF, generateContractPDF } from '../lib/pdf'
 import { saveDocument } from '../lib/documents'
 import ServicePicker from './ServicePicker'
+import PDFLangPicker from './PDFLangPicker'
 
 const fmt = n =>
   '€ ' + Number(n).toLocaleString('bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function Calculator({ editProjectId }) {
   const { user, profile } = useAuth()
+  const { t } = useLang()
 
   const [projectName,    setProjectName]    = useState('')
   const [projectAddress, setProjectAddress] = useState('')
@@ -27,6 +30,7 @@ export default function Calculator({ editProjectId }) {
   const [saving,        setSaving]        = useState(false)
   const [showActions,   setShowActions]   = useState(false)
   const [draftRestored, setDraftRestored] = useState(false)
+  const [pdfLangCtx,    setPdfLangCtx]   = useState(null) // { type, onGenerate }
   const draftKey = `calc_draft_${user?.id || 'anon'}`
   const autoSaveTimer = useRef(null)
 
@@ -82,15 +86,15 @@ export default function Calculator({ editProjectId }) {
     loadProject()
   }, [editProjectId])
 
-  // ── Restore draft on first load (only for new projects) ──
+  // Restore draft
   useEffect(() => {
-    if (editProjectId) return // editing existing — don't restore draft
+    if (editProjectId) return
     try {
       const saved = localStorage.getItem(draftKey)
       if (!saved) return
       const draft = JSON.parse(saved)
       if (!draft.items?.length) return
-      if (window.confirm('📋 Намерена е незапазена чернова. Искаш ли да я възстановиш?')) {
+      if (window.confirm('📋 ' + t('draftRestored'))) {
         setProjectName(draft.projectName || '')
         setProjectAddress(draft.projectAddress || '')
         setOfferNumber(draft.offerNumber || '')
@@ -105,16 +109,13 @@ export default function Calculator({ editProjectId }) {
     } catch {}
   }, []) // eslint-disable-line
 
-  // ── Auto-save draft on every change ──
+  // Auto-save draft
   useEffect(() => {
-    if (editProjectId) return // don't draft-save when editing existing
+    if (editProjectId) return
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
     autoSaveTimer.current = setTimeout(() => {
       try {
-        if (items.length === 0 && !projectName) {
-          localStorage.removeItem(draftKey)
-          return
-        }
+        if (items.length === 0 && !projectName) { localStorage.removeItem(draftKey); return }
         localStorage.setItem(draftKey, JSON.stringify({
           projectName, projectAddress, offerNumber, vatOn, notes, clientId, items,
           savedAt: new Date().toISOString(),
@@ -130,28 +131,18 @@ export default function Calculator({ editProjectId }) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i))
 
   async function saveProject() {
-    if (items.length === 0) { alert('Добавете поне една услуга!'); return }
+    if (items.length === 0) { alert(t('noServices')); return }
     setSaving(true)
-
     const name      = projectName.trim() || 'Проект ' + new Date().toLocaleDateString('bg-BG')
     const offer_num = offerNumber.trim() || ('OF-' + Date.now().toString().slice(-6))
-
     const payload = {
-      user_id:      user.id,
-      client_id:    clientId || null,
-      name,
-      address:      projectAddress,
-      vat:          vatOn,
-      notes,
-      items,
-      subtotal,
-      vat_amount:   vatAmt,
-      total,
+      user_id: user.id, client_id: clientId || null,
+      name, address: projectAddress, vat: vatOn, notes, items,
+      subtotal, vat_amount: vatAmt, total,
       offer_number: offer_num,
       offer_date:   new Date().toISOString().slice(0, 10),
       updated_at:   new Date().toISOString(),
     }
-
     let newId = savedId
     if (newId) {
       await offlineUpdate('projects', newId, payload)
@@ -159,10 +150,9 @@ export default function Calculator({ editProjectId }) {
       const record = await offlineInsert('projects', { ...payload, status: 'draft' })
       if (record) { newId = record.id; setSavedId(newId); setOfferNumber(offer_num) }
     }
-
     setSaving(false)
     localStorage.removeItem(draftKey)
-    alert('✅ Проектът е запазен!')
+    alert('✅ ' + t('saved').replace('✅ ', ''))
   }
 
   async function getClientData() {
@@ -174,67 +164,70 @@ export default function Calculator({ editProjectId }) {
     return db.clients.get(clientId)
   }
 
-  async function handlePDF() {
-    if (items.length === 0) { alert('Добавете поне една услуга!'); return }
-    const clientData = await getClientData()
-    const num = offerNumber || ('OF-' + Date.now().toString().slice(-6))
-    const html = generateOfferPDF({
-      profile,
-      client: clientData,
-      isPro: profile?.plan === 'pro',
-      project: {
-        name: projectName || 'Проект', address: projectAddress, notes, items,
-        subtotal, vat: vatOn, vat_amount: vatAmt, total,
-        offer_number: num,
-        offer_date: new Date().toLocaleDateString('bg-BG'),
+  // Open PDF lang picker for Offer
+  function openOfferPicker() {
+    if (items.length === 0) { alert(t('noServices')); return }
+    setPdfLangCtx({
+      type: 'offer',
+      onGenerate: async (pdfLang) => {
+        const clientData = await getClientData()
+        const num = offerNumber || ('OF-' + Date.now().toString().slice(-6))
+        const html = generateOfferPDF({
+          profile, client: clientData,
+          isPro: profile?.plan === 'pro',
+          project: {
+            name: projectName || 'Проект', address: projectAddress, notes, items,
+            subtotal, vat: vatOn, vat_amount: vatAmt, total,
+            offer_number: num,
+            offer_date: new Date().toLocaleDateString('bg-BG'),
+          },
+          lang: pdfLang,
+        })
+        if (html && savedId) {
+          saveDocument({ html, projectId: savedId, userId: user.id, type: 'offer', name: `Оферта ${num}` })
+        }
       },
     })
-    if (html && savedId) {
-      saveDocument({
-        html, projectId: savedId, userId: user.id,
-        type: 'offer', name: `Оферта ${num}`,
-      })
-    }
   }
 
-  async function handleContract() {
-    if (items.length === 0) { alert('Добавете поне една услуга!'); return }
-    const clientData = await getClientData()
-    const html = generateContractPDF({
-      profile,
-      client: clientData,
-      project: {
-        name: projectName || 'Проект', address: projectAddress, notes, items,
-        subtotal, vat: vatOn, vat_amount: vatAmt, total,
+  // Open PDF lang picker for Contract
+  function openContractPicker() {
+    if (items.length === 0) { alert(t('noServices')); return }
+    setPdfLangCtx({
+      type: 'contract',
+      onGenerate: async (pdfLang) => {
+        const clientData = await getClientData()
+        const html = generateContractPDF({
+          profile, client: clientData,
+          project: {
+            name: projectName || 'Проект', address: projectAddress, notes, items,
+            subtotal, vat: vatOn, vat_amount: vatAmt, total,
+          },
+          lang: pdfLang,
+        })
+        if (html && savedId) {
+          saveDocument({ html, projectId: savedId, userId: user.id, type: 'contract', name: `Договор ${projectName || 'Проект'}` })
+        }
+        setShowActions(false)
       },
     })
-    if (html && savedId) {
-      saveDocument({
-        html, projectId: savedId, userId: user.id,
-        type: 'contract', name: `Договор ${projectName || 'Проект'}`,
-      })
-    }
-    setShowActions(false)
   }
 
   async function handleShare() {
-    if (!savedId) { alert('Запази проекта първо!'); return }
-    // Generate or retrieve existing share token
+    if (!savedId) { alert(t('saveFirst')); return }
     const { data: existing } = await supabase
       .from('projects').select('share_token').eq('id', savedId).single()
-
     let token = existing?.share_token
     if (!token) {
       token = crypto.randomUUID()
       await supabase.from('projects').update({ share_token: token }).eq('id', savedId)
     }
-
     const url = `${window.location.origin}${window.location.pathname}#share/${token}`
     try {
       await navigator.clipboard.writeText(url)
-      alert('🔗 Линкът е копиран!\n\nКлиентът може да го отвори в браузъра си:\n' + url)
+      alert(`${t('linkCopied')}\n\n${t('linkDesc')}\n${url}`)
     } catch {
-      prompt('Копирай линка:', url)
+      prompt(t('linkCopied'), url)
     }
     setShowActions(false)
   }
@@ -246,13 +239,13 @@ export default function Calculator({ editProjectId }) {
       <div className="bg-white border-b border-slate-100 px-4 py-3 flex-shrink-0 space-y-2">
         <input
           className="w-full text-lg font-bold outline-none placeholder-slate-300 text-slate-800 bg-transparent"
-          placeholder="Название на проект..."
+          placeholder={t('projectName') + '...'}
           value={projectName}
           onChange={e => setProjectName(e.target.value)}
         />
         <input
           className="w-full text-sm outline-none placeholder-slate-300 text-slate-500 bg-transparent"
-          placeholder="📍 Адрес на обекта..."
+          placeholder={'📍 ' + t('projectAddress') + '...'}
           value={projectAddress}
           onChange={e => setProjectAddress(e.target.value)}
         />
@@ -261,12 +254,12 @@ export default function Calculator({ editProjectId }) {
           value={clientId}
           onChange={e => setClientId(e.target.value)}
         >
-          <option value="">👤 Без клиент</option>
+          <option value="">👤 {t('noClient')}</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <input
           className="w-full text-xs outline-none placeholder-slate-300 text-slate-400 bg-transparent"
-          placeholder="Номер на оферта (напр. OF-2024-001)..."
+          placeholder={t('offerNumber') + '...'}
           value={offerNumber}
           onChange={e => setOfferNumber(e.target.value)}
         />
@@ -277,8 +270,8 @@ export default function Calculator({ editProjectId }) {
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-16">
             <div className="text-6xl mb-4">🏗️</div>
-            <h3 className="text-lg font-semibold text-slate-600 mb-2">Няма добавени услуги</h3>
-            <p className="text-slate-400 text-sm">Натисни „+ Добави услуга" по-долу</p>
+            <h3 className="text-lg font-semibold text-slate-600 mb-2">{t('navCalc')}</h3>
+            <p className="text-slate-400 text-sm">{t('addService').replace('+ ', '')}</p>
           </div>
         ) : (
           <>
@@ -297,7 +290,6 @@ export default function Calculator({ editProjectId }) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm text-slate-800 truncate mb-1">{item.name}</div>
-                      {/* ── Inline editable qty × price ── */}
                       <div className="flex items-center gap-1 text-xs text-slate-500">
                         <input
                           type="number" min="0" step="0.1"
@@ -331,11 +323,11 @@ export default function Calculator({ editProjectId }) {
 
             {/* Notes */}
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">📝 Бележки</label>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">📝 {t('notes')}</label>
               <textarea
                 className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-indigo-400 resize-none"
                 rows={2}
-                placeholder="Условия, забележки за клиента..."
+                placeholder={t('notesPlaceholder')}
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
               />
@@ -344,8 +336,8 @@ export default function Calculator({ editProjectId }) {
             {/* VAT toggle */}
             <div className="bg-white border border-slate-200 rounded-xl p-3.5 mb-4 flex items-center justify-between shadow-sm">
               <div>
-                <div className="font-semibold text-sm text-slate-800">ДДС (20%)</div>
-                <div className="text-xs text-slate-400 mt-0.5">Включи ДДС в офертата</div>
+                <div className="font-semibold text-sm text-slate-800">{t('vatToggle')} (20%)</div>
+                <div className="text-xs text-slate-400 mt-0.5">{t('defaultVat').split('(')[0]}</div>
               </div>
               <button
                 onClick={() => setVatOn(v => !v)}
@@ -362,15 +354,15 @@ export default function Calculator({ editProjectId }) {
             {/* Summary card */}
             <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-5 mb-4 text-white shadow-lg">
               <div className="flex justify-between text-sm opacity-80 mb-2">
-                <span>Сума без ДДС</span><span>{fmt(subtotal)}</span>
+                <span>{t('subtotal')}</span><span>{fmt(subtotal)}</span>
               </div>
               {vatOn && (
                 <div className="flex justify-between text-sm opacity-80 mb-2">
-                  <span>ДДС 20%</span><span>{fmt(vatAmt)}</span>
+                  <span>{t('vat')}</span><span>{fmt(vatAmt)}</span>
                 </div>
               )}
               <div className="flex justify-between text-xl font-black border-t border-white/30 pt-3 mt-2">
-                <span>ОБЩО</span><span>{fmt(total)}</span>
+                <span>{t('total').toUpperCase()}</span><span>{fmt(total)}</span>
               </div>
             </div>
           </>
@@ -380,21 +372,21 @@ export default function Calculator({ editProjectId }) {
       {/* ── Action bar ── */}
       <div className="bg-white border-t border-slate-100 p-3 flex-shrink-0 relative">
 
-        {/* Extra actions popup — appears ABOVE */}
+        {/* Extra actions popup */}
         {showActions && items.length > 0 && (
           <div className="absolute bottom-full left-3 right-3 mb-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-10">
             <button
-              onClick={() => { handleContract(); setShowActions(false) }}
+              onClick={() => { openContractPicker(); setShowActions(false) }}
               className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
             >
-              <span>📄</span> Генерирай договор
+              <span>📄</span> {t('contractPDF')}
             </button>
             <button
               onClick={() => { handleShare(); setShowActions(false) }}
               className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              <span>🔗</span> Сподели линк с клиент
-              {!savedId && <span className="ml-auto text-xs text-slate-400">(запази първо)</span>}
+              <span>🔗</span> {t('shareLink')}
+              {!savedId && <span className="ml-auto text-xs text-slate-400">({t('saveFirst').replace('!', '')})</span>}
             </button>
           </div>
         )}
@@ -407,14 +399,14 @@ export default function Calculator({ editProjectId }) {
               className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm
                          bg-emerald-500 hover:bg-emerald-600 active:scale-[.98] disabled:opacity-60"
             >
-              {saving ? '⏳...' : '💾 Запази'}
+              {saving ? '⏳...' : t('saveProject')}
             </button>
             <button
-              onClick={handlePDF}
+              onClick={openOfferPicker}
               className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm
                          bg-blue-500 hover:bg-blue-600 active:scale-[.98]"
             >
-              🖨️ PDF оферта
+              {t('offerPDF')}
             </button>
             <button
               onClick={() => setShowActions(v => !v)}
@@ -433,13 +425,16 @@ export default function Calculator({ editProjectId }) {
                      bg-gradient-to-r from-indigo-600 to-violet-700
                      hover:opacity-90 active:scale-[.98] transition-all shadow-sm"
         >
-          + Добави услуга
+          {t('addService')}
         </button>
       </div>
 
       {showPicker && (
         <ServicePicker onAdd={addItem} onClose={() => setShowPicker(false)} />
       )}
+
+      {/* PDF language picker */}
+      <PDFLangPicker ctx={pdfLangCtx} onClose={() => setPdfLangCtx(null)} />
     </div>
   )
 }

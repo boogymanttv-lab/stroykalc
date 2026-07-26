@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LanguageContext'
 import { supabase } from '../lib/supabase'
 import { db } from '../lib/db'
 import { offlineDelete } from '../lib/syncService'
@@ -11,14 +12,15 @@ import { saveDocument } from '../lib/documents'
 import DocumentsModal from '../components/DocumentsModal'
 import TasksModal from '../components/TasksModal'
 import ProGateModal from '../components/ProGate'
+import PDFLangPicker from '../components/PDFLangPicker'
 
-const STATUS = {
-  draft:       { label: 'Чернова',   color: 'bg-slate-100 text-slate-600' },
-  sent:        { label: 'Изпратена', color: 'bg-blue-100 text-blue-700' },
-  accepted:    { label: 'Приета',    color: 'bg-green-100 text-green-700' },
-  in_progress: { label: 'В процес',  color: 'bg-amber-100 text-amber-700' },
-  completed:   { label: 'Завършена', color: 'bg-emerald-100 text-emerald-700' },
-  cancelled:   { label: 'Отказана',  color: 'bg-red-100 text-red-600' },
+const STATUS_KEYS = {
+  draft:       { labelKey: 'statusDraft',       color: 'bg-slate-100 text-slate-600' },
+  sent:        { labelKey: 'statusSent',        color: 'bg-blue-100 text-blue-700' },
+  accepted:    { labelKey: 'statusAccepted',    color: 'bg-green-100 text-green-700' },
+  in_progress: { labelKey: 'statusInProgress',  color: 'bg-amber-100 text-amber-700' },
+  completed:   { labelKey: 'statusCompleted',   color: 'bg-emerald-100 text-emerald-700' },
+  cancelled:   { labelKey: 'statusCancelled',   color: 'bg-red-100 text-red-600' },
 }
 
 const fmt = n =>
@@ -26,6 +28,7 @@ const fmt = n =>
 
 export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
   const { user, profile } = useAuth()
+  const { t } = useLang()
   const isPro = profile?.plan === 'pro'
   const [projects, setProjects]         = useState([])
   const [loading, setLoading]           = useState(true)
@@ -34,12 +37,11 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
   const [expenseProject, setExpenseProject] = useState(null)
   const [taskProject,    setTaskProject]    = useState(null)
   const [docProject,     setDocProject]     = useState(null)
-  const [proGateFeature, setProGateFeature] = useState(null) // null = hidden
-  const [taskMap,        setTaskMap]        = useState({}) // { project_id: count }
-  // payment sums per project: { [project_id]: number }
-  const [paidMap,    setPaidMap]      = useState({})
-  // photo counts per project: { [project_id]: number }
-  const [photoMap,   setPhotoMap]     = useState({})
+  const [proGateFeature, setProGateFeature] = useState(null)
+  const [taskMap,        setTaskMap]        = useState({})
+  const [paidMap,        setPaidMap]        = useState({})
+  const [photoMap,       setPhotoMap]       = useState({})
+  const [pdfLangCtx,     setPdfLangCtx]    = useState(null) // { type, onGenerate }
 
   const proAction = (fn, feature) => isPro ? fn() : setProGateFeature(feature || 'default')
 
@@ -47,7 +49,6 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
 
   async function loadAll() {
     setLoading(true)
-
     let proj, pays, phs, tks
 
     if (navigator.onLine) {
@@ -58,28 +59,23 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
         supabase.from('tasks').select('project_id, status').eq('status', 'todo'),
       ])
       proj = r1.data; pays = r2.data; phs = r3.data; tks = r4.data
-      // Cache projects (flatten clients join for IndexedDB)
       if (proj) await db.projects.bulkPut(proj.map(p => ({
         ...p, _client_name: p.clients?.name ?? null,
       })))
       if (pays) await db.payments.bulkPut(pays.map(p => ({ ...p, id: p.id || (p.project_id + '_' + p.amount) })))
     } else {
-      // Offline — read from IndexedDB
       try {
         let localProj = await db.projects.where('user_id').equals(user.id).toArray()
         if (!localProj.length) localProj = await db.projects.toArray()
         proj = localProj
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .map(p => ({ ...p, clients: p._client_name ? { name: p._client_name } : null }))
-
         let localPays = await db.payments.where('user_id').equals(user.id).toArray()
         if (!localPays.length) localPays = await db.payments.toArray()
         pays = localPays
-
         let localPhs = await db.photos.where('user_id').equals(user.id).toArray()
         if (!localPhs.length) localPhs = await db.photos.toArray()
         phs = localPhs
-
         let localTks = await db.tasks.where('user_id').equals(user.id).filter(t => t.status === 'todo').toArray()
         if (!localTks.length) localTks = (await db.tasks.toArray()).filter(t => t.status === 'todo')
         tks = localTks
@@ -90,29 +86,20 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
     }
 
     setProjects(proj || [])
-
     const map = {}
-    for (const p of (pays || [])) {
-      map[p.project_id] = (map[p.project_id] || 0) + Number(p.amount)
-    }
+    for (const p of (pays || [])) map[p.project_id] = (map[p.project_id] || 0) + Number(p.amount)
     setPaidMap(map)
-
     const phmap = {}
-    for (const p of (phs || [])) {
-      phmap[p.project_id] = (phmap[p.project_id] || 0) + 1
-    }
+    for (const p of (phs || [])) phmap[p.project_id] = (phmap[p.project_id] || 0) + 1
     setPhotoMap(phmap)
-
     const tkmap = {}
-    for (const t of (tks || [])) {
-      tkmap[t.project_id] = (tkmap[t.project_id] || 0) + 1
-    }
+    for (const tk of (tks || [])) tkmap[tk.project_id] = (tkmap[tk.project_id] || 0) + 1
     setTaskMap(tkmap)
     setLoading(false)
   }
 
   async function deleteProject(id, name) {
-    if (!confirm(`Изтрий проект „${name}"?`)) return
+    if (!confirm(`${t('deleteProjectConfirm')} „${name}"?`)) return
     await offlineDelete('projects', id)
     setProjects(p => p.filter(x => x.id !== id))
   }
@@ -124,90 +111,89 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
 
   async function duplicateProject(p) {
     await supabase.from('projects').insert({
-      user_id:      user.id,
-      client_id:    p.client_id,
-      name:         'Копие на ' + p.name,
-      address:      p.address,
-      status:       'draft',
-      items:        p.items,
-      vat:          p.vat,
-      notes:        p.notes,
-      subtotal:     p.subtotal,
-      vat_amount:   p.vat_amount,
-      total:        p.total,
-      offer_date:   new Date().toISOString().slice(0, 10),
+      user_id:    user.id, client_id: p.client_id,
+      name: 'Копие на ' + p.name,
+      address: p.address, status: 'draft', items: p.items,
+      vat: p.vat, notes: p.notes, subtotal: p.subtotal,
+      vat_amount: p.vat_amount, total: p.total,
+      offer_date: new Date().toISOString().slice(0, 10),
     })
     loadAll()
   }
 
   async function getProjectData(p) {
-    const [{ data: profile }, { data: client }] = await Promise.all([
+    const [{ data: prof }, { data: client }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
       p.client_id
         ? supabase.from('clients').select('*').eq('id', p.client_id).single()
         : { data: null },
     ])
-    return { profile, client }
+    return { profile: prof, client }
   }
 
-  async function handleOfferPDF(p) {
-    const { profile, client } = await getProjectData(p)
-
-    // Ensure share token exists for QR code
-    let token = p.share_token
-    if (!token) {
-      token = crypto.randomUUID()
-      await supabase.from('projects').update({ share_token: token }).eq('id', p.id)
-    }
-    const shareUrl = `${window.location.origin}${window.location.pathname}#share/${token}`
-
-    const html = generateOfferPDF({
-      profile, client,
-      shareUrl,
-      isPro: profile?.plan === 'pro',
-      project: {
-        ...p,
-        offer_date: p.offer_date
-          ? new Date(p.offer_date).toLocaleDateString('bg-BG')
-          : new Date().toLocaleDateString('bg-BG'),
-        vat_amount: p.vat_amount,
+  function openOfferPicker(p) {
+    setPdfLangCtx({
+      type: 'offer',
+      onGenerate: async (pdfLang) => {
+        const { profile: prof, client } = await getProjectData(p)
+        let token = p.share_token
+        if (!token) {
+          token = crypto.randomUUID()
+          await supabase.from('projects').update({ share_token: token }).eq('id', p.id)
+        }
+        const shareUrl = `${window.location.origin}${window.location.pathname}#share/${token}`
+        const html = generateOfferPDF({
+          profile: prof, client, shareUrl,
+          isPro: prof?.plan === 'pro',
+          project: {
+            ...p,
+            offer_date: p.offer_date
+              ? new Date(p.offer_date).toLocaleDateString('bg-BG')
+              : new Date().toLocaleDateString('bg-BG'),
+            vat_amount: p.vat_amount,
+          },
+          lang: pdfLang,
+        })
+        if (html) {
+          saveDocument({
+            html, projectId: p.id, userId: user.id,
+            type: 'offer', name: `Оферта ${p.offer_number || new Date().toLocaleDateString('bg-BG')}`,
+          })
+        }
       },
     })
-    if (html) {
-      saveDocument({
-        html, projectId: p.id, userId: user.id,
-        type: 'offer', name: `Оферта ${p.offer_number || new Date().toLocaleDateString('bg-BG')}`,
-      })
-    }
   }
 
-  async function handleContractPDF(p) {
-    const { profile, client } = await getProjectData(p)
-    const html = generateContractPDF({ profile, client, project: p })
-    if (html) {
-      saveDocument({
-        html, projectId: p.id, userId: user.id,
-        type: 'contract', name: `Договор ${p.name}`,
-      })
-    }
+  function openContractPicker(p) {
+    setPdfLangCtx({
+      type: 'contract',
+      onGenerate: async (pdfLang) => {
+        const { profile: prof, client } = await getProjectData(p)
+        const html = generateContractPDF({ profile: prof, client, project: p, lang: pdfLang })
+        if (html) {
+          saveDocument({
+            html, projectId: p.id, userId: user.id,
+            type: 'contract', name: `Договор ${p.name}`,
+          })
+        }
+      },
+    })
   }
 
   async function handleShare(p) {
     const { data: existing } = await supabase
       .from('projects').select('share_token').eq('id', p.id).single()
-
     let token = existing?.share_token
     if (!token) {
       token = crypto.randomUUID()
       await supabase.from('projects').update({ share_token: token }).eq('id', p.id)
     }
-
     const url = `${window.location.origin}${window.location.pathname}#share/${token}`
     try {
       await navigator.clipboard.writeText(url)
-      alert('🔗 Линкът е копиран!\n\nПрати го на клиента — той ще види офертата директно в браузъра си без да влиза в системата.\n\n' + url)
+      alert(`${t('linkCopied')}\n\n${t('linkDesc')}\n\n${url}`)
     } catch {
-      prompt('Копирай линка:', url)
+      prompt(t('linkCopied'), url)
     }
   }
 
@@ -215,27 +201,27 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto thin-scroll p-4">
         {loading ? (
-          <div className="text-center py-16 text-slate-400 text-sm">Зареждане...</div>
+          <div className="text-center py-16 text-slate-400 text-sm">{t('loading')}</div>
         ) : projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-20">
             <div className="text-6xl mb-4">📁</div>
-            <h3 className="text-lg font-semibold text-slate-600 mb-2">Няма запазени проекти</h3>
-            <p className="text-slate-400 text-sm mb-6">Създайте оферта в Калкулатора и я запазете</p>
+            <h3 className="text-lg font-semibold text-slate-600 mb-2">{t('noProjects')}</h3>
+            <p className="text-slate-400 text-sm mb-6">{t('noProjectsDesc')}</p>
             <button
               onClick={onNew}
               className="px-6 py-2.5 rounded-xl font-semibold text-white text-sm
                          bg-gradient-to-r from-indigo-600 to-violet-700 hover:opacity-90"
             >
-              + Нов проект
+              + {t('navProjects')}
             </button>
           </div>
         ) : (
           <div className="space-y-4 pb-4">
             {projects.map(p => {
-              const st       = STATUS[p.status] || STATUS.draft
-              const paid     = paidMap[p.id] || 0
+              const st        = STATUS_KEYS[p.status] || STATUS_KEYS.draft
+              const paid      = paidMap[p.id] || 0
               const remaining = Number(p.total) - paid
-              const paidPct  = p.total > 0 ? Math.min(100, (paid / p.total) * 100) : 0
+              const paidPct   = p.total > 0 ? Math.min(100, (paid / p.total) * 100) : 0
               const fullyPaid = remaining <= 0.01
 
               return (
@@ -253,15 +239,15 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
                       )}
                       <div className="text-xs text-slate-400 mt-1">
                         {new Date(p.created_at).toLocaleDateString('bg-BG')}
-                        {' · '}{p.items?.length || 0} услуги
+                        {' · '}{p.items?.length || 0} {t('services')}
                         {p.offer_number && ` · ${p.offer_number}`}
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="font-bold text-indigo-600">{fmt(p.total)}</div>
-                      {p.vat && <div className="text-xs text-slate-400">с ДДС</div>}
+                      {p.vat && <div className="text-xs text-slate-400">{t('withVAT')}</div>}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-semibold mt-1 inline-block ${st.color}`}>
-                        {st.label}
+                        {t(st.labelKey)}
                       </span>
                     </div>
                   </div>
@@ -284,17 +270,17 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
                     </div>
                     <div className={`text-xs font-semibold whitespace-nowrap ${fullyPaid ? 'text-emerald-600' : 'text-slate-400'}`}>
                       {fullyPaid
-                        ? '✅ Платено'
+                        ? t('paid')
                         : paid > 0
-                          ? `${fmt(paid)} / остатък ${fmt(remaining)}`
-                          : 'Не е платено'
+                          ? `${fmt(paid)} / ${t('remaining')} ${fmt(remaining)}`
+                          : t('notPaid')
                       }
                     </div>
                   </div>
 
                   {/* Status pills */}
                   <div className="flex gap-1.5 flex-wrap mb-3">
-                    {Object.entries(STATUS).map(([key, val]) => (
+                    {Object.entries(STATUS_KEYS).map(([key, val]) => (
                       <button
                         key={key}
                         onClick={() => changeStatus(p.id, key)}
@@ -304,67 +290,66 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
                             : 'opacity-35 hover:opacity-75'
                         }`}
                       >
-                        {val.label}
+                        {t(val.labelKey)}
                       </button>
                     ))}
                   </div>
 
-                  {/* Actions */}
-                  {/* Ред 1 — основни действия */}
+                  {/* Actions row 1 */}
                   <div className="flex gap-2 mb-2">
                     <button
                       onClick={() => onEdit(p.id)}
                       className="flex-1 text-xs py-2.5 rounded-xl bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition-colors"
                     >
-                      ✏️ Редактирай
+                      ✏️ {t('edit')}
                     </button>
                     <button
                       onClick={() => setPayProject(p)}
                       className="flex-1 text-xs py-2.5 rounded-xl bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 transition-colors"
                     >
-                      💰 Плащания
+                      {t('payments')}
                     </button>
                     <button
                       onClick={() => proAction(() => setExpenseProject(p), 'expenses')}
                       className="flex-1 text-xs py-2.5 rounded-xl bg-orange-50 text-orange-600 font-semibold hover:bg-orange-100 transition-colors"
                     >
-                      💸 Разходи{!isPro && ' ⚡'}
+                      {t('expenses')}{!isPro && ' ⚡'}
                     </button>
                     <button
                       onClick={() => proAction(() => setTaskProject(p), 'tasks')}
                       className="relative text-xs px-3 py-2.5 rounded-xl bg-indigo-50 text-indigo-600 font-semibold hover:bg-indigo-100 transition-colors"
-                      title="Задачи"
+                      title={t('tasks')}
                     >
                       ✅{taskMap[p.id] ? <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">{taskMap[p.id]}</span> : null}
                       {!isPro && <span className="absolute -bottom-1 -right-1 text-[8px]">⚡</span>}
                     </button>
                   </div>
 
-                  {/* Ред 2 — документи и допълнителни */}
+                  {/* Actions row 2 */}
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleOfferPDF(p)}
+                      onClick={() => openOfferPicker(p)}
                       className="flex-1 text-xs py-2 rounded-xl bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition-colors"
                     >
-                      🖨️ Оферта
+                      🖨️ {t('offerPDF').replace('🖨️ ', '')}
                     </button>
                     <button
-                      onClick={() => proAction(() => handleContractPDF(p), 'contract')}
+                      onClick={() => proAction(() => openContractPicker(p), 'contract')}
                       className="flex-1 text-xs py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors"
                     >
-                      📄 Договор{!isPro && ' ⚡'}
+                      📄 {t('contractPDF').replace('📄 ', '')}{!isPro && ' ⚡'}
                     </button>
                     <button
                       onClick={() => proAction(() => setDocProject(p), 'documents')}
                       className="flex-1 text-xs py-2 rounded-xl bg-amber-50 text-amber-700 font-semibold hover:bg-amber-100 transition-colors"
                     >
-                      📁 Документи{!isPro && ' ⚡'}
+                      📁 {t('documents').replace('📁 ', '')}{!isPro && ' ⚡'}
                     </button>
                     <button
                       onClick={() => proAction(() => handleShare(p), 'share')}
                       className="flex-1 text-xs py-2 rounded-xl bg-violet-50 text-violet-700 font-semibold hover:bg-violet-100 transition-colors"
                     >
-                      🔗 Сподели{!isPro && ' ⚡'}
+                      🔗{!isPro && ' ⚡'}
                     </button>
                     <button
                       onClick={() => proAction(() => setPhotoProject(p), 'photos')}
@@ -376,7 +361,7 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
                     <button
                       onClick={() => duplicateProject(p)}
                       className="text-xs px-3 py-2 rounded-xl bg-slate-100 text-slate-500 font-semibold hover:bg-slate-200 transition-colors"
-                      title="Дублирай проекта"
+                      title={t('duplicate')}
                     >
                       📋
                     </button>
@@ -401,51 +386,25 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
                      bg-gradient-to-r from-indigo-600 to-violet-700
                      hover:opacity-90 active:scale-[.98] transition-all shadow-sm"
         >
-          + Нов проект
+          + {t('newProject')}
         </button>
       </div>
 
-      {/* Payments modal */}
       {payProject && (
-        <PaymentsModal
-          project={payProject}
-          onClose={() => { setPayProject(null); loadAll() }}
-        />
+        <PaymentsModal project={payProject} onClose={() => { setPayProject(null); loadAll() }} />
       )}
-
-      {/* Photos modal */}
       {photoProject && (
-        <PhotosModal
-          project={photoProject}
-          onClose={() => { setPhotoProject(null); loadAll() }}
-        />
+        <PhotosModal project={photoProject} onClose={() => { setPhotoProject(null); loadAll() }} />
       )}
-
-      {/* Expenses modal */}
       {expenseProject && (
-        <ExpensesModal
-          project={expenseProject}
-          onClose={() => { setExpenseProject(null); loadAll() }}
-        />
+        <ExpensesModal project={expenseProject} onClose={() => { setExpenseProject(null); loadAll() }} />
       )}
-
-      {/* Tasks modal */}
       {taskProject && (
-        <TasksModal
-          project={taskProject}
-          onClose={() => { setTaskProject(null); loadAll() }}
-        />
+        <TasksModal project={taskProject} onClose={() => { setTaskProject(null); loadAll() }} />
       )}
-
-      {/* Documents modal */}
       {docProject && (
-        <DocumentsModal
-          project={docProject}
-          onClose={() => setDocProject(null)}
-        />
+        <DocumentsModal project={docProject} onClose={() => setDocProject(null)} />
       )}
-
-      {/* PRO gate */}
       {proGateFeature && (
         <ProGateModal
           feature={proGateFeature}
@@ -453,6 +412,9 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
           onUpgrade={() => { setProGateFeature(null); onGoUpgrade?.() }}
         />
       )}
+
+      {/* PDF language picker */}
+      <PDFLangPicker ctx={pdfLangCtx} onClose={() => setPdfLangCtx(null)} />
     </div>
   )
 }

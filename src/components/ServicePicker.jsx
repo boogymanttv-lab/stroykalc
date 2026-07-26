@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { SERVICES } from '../data/services'
+import { useLang } from '../contexts/LanguageContext'
 
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2)
 
 export default function ServicePicker({ onAdd, onClose }) {
-  const [catId,      setCatId]      = useState(null)   // null = category list, string = inside category
+  const { t } = useLang()
+  const [catId,      setCatId]      = useState(null)
   const [search,     setSearch]     = useState('')
   const [expandedId, setExpandedId] = useState(null)
 
@@ -34,7 +36,7 @@ export default function ServicePicker({ onAdd, onClose }) {
     setExpandedId(null)
   }
 
-  const groups = ['Вътрешни', 'Външни']
+  const groups   = ['Вътрешни', 'Външни']
   const groupIcon = { 'Вътрешни': '🏠', 'Външни': '🌿' }
 
   // ── Shared service list ──
@@ -43,7 +45,7 @@ export default function ServicePicker({ onAdd, onClose }) {
       {displayItems.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-slate-400">
           <div className="text-4xl mb-3">🔍</div>
-          <p className="text-sm">Няма намерени услуги</p>
+          <p className="text-sm">{t('noServicesFound')}</p>
         </div>
       )}
       {displayItems.map(item => (
@@ -80,11 +82,11 @@ export default function ServicePicker({ onAdd, onClose }) {
                 onClick={() => { setCatId(null); setExpandedId(null) }}
                 className="text-indigo-600 text-sm font-semibold flex items-center gap-1"
               >
-                ‹ Назад
+                ‹ {t('back').replace('← ', '')}
               </button>
             )}
             <h2 className="text-lg font-bold text-slate-800 flex-1">
-              {catId && !q ? cat.icon + ' ' + cat.name : 'Избери услуга'}
+              {catId && !q ? cat.icon + ' ' + cat.name : t('selectService')}
             </h2>
             <button onClick={onClose} className="text-2xl leading-none text-slate-400 w-8 h-8 flex items-center justify-center">×</button>
           </div>
@@ -93,7 +95,7 @@ export default function ServicePicker({ onAdd, onClose }) {
           <div className="px-4 py-2.5 border-b border-slate-100 flex-shrink-0">
             <input
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:bg-white transition-colors"
-              placeholder="🔍 Търсене на услуга..."
+              placeholder={t('searchService')}
               value={search}
               onChange={e => { setSearch(e.target.value); setExpandedId(null) }}
               autoFocus
@@ -102,17 +104,14 @@ export default function ServicePicker({ onAdd, onClose }) {
 
           {/* Category list OR service list */}
           {!catId && !q ? (
-            /* Category list grouped */
             <div className="flex-1 overflow-y-auto thin-scroll">
               {groups.map(group => (
                 <div key={group}>
-                  {/* Group sticky header */}
                   <div className="sticky top-0 px-4 py-2 bg-slate-50 border-b border-slate-100">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                       {groupIcon[group]} {group}
                     </span>
                   </div>
-                  {/* Category rows */}
                   {SERVICES.filter(s => s.group === group).map(s => (
                     <button
                       key={s.id}
@@ -126,7 +125,7 @@ export default function ServicePicker({ onAdd, onClose }) {
                         {s.icon}
                       </span>
                       <span className="flex-1 text-sm font-medium text-slate-700">{s.name}</span>
-                      <span className="text-xs text-slate-400">{s.items.length} услуги</span>
+                      <span className="text-xs text-slate-400">{s.items.length} {t('servicesCount')}</span>
                       <span className="text-slate-300 text-sm">›</span>
                     </button>
                   ))}
@@ -181,7 +180,7 @@ export default function ServicePicker({ onAdd, onClose }) {
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
             <h2 className="text-base font-bold text-slate-800">
-              {cat ? cat.icon + ' ' + cat.name : 'Избери услуга'}
+              {cat ? cat.icon + ' ' + cat.name : t('selectService')}
             </h2>
             <button onClick={onClose} className="text-xl leading-none text-slate-400 hover:text-slate-600 w-7 h-7 flex items-center justify-center">×</button>
           </div>
@@ -190,7 +189,7 @@ export default function ServicePicker({ onAdd, onClose }) {
           <div className="px-5 py-3 border-b border-slate-100 flex-shrink-0">
             <input
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-400 focus:bg-white transition-colors"
-              placeholder="🔍 Търсене на услуга..."
+              placeholder={t('searchService')}
               value={search}
               onChange={e => { setSearch(e.target.value); setExpandedId(null) }}
             />
@@ -200,7 +199,7 @@ export default function ServicePicker({ onAdd, onClose }) {
           {!catId && !q ? (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
               <div className="text-5xl mb-3">👈</div>
-              <p className="text-sm">Избери категория от списъка</p>
+              <p className="text-sm">{t('selectCategory')}</p>
             </div>
           ) : (
             <ServiceList />
@@ -213,12 +212,13 @@ export default function ServicePicker({ onAdd, onClose }) {
 }
 
 function ServiceRow({ item, expanded, onToggle, onAdd }) {
+  const { t } = useLang()
   const [qty,   setQty]   = useState('')
   const [price, setPrice] = useState(String(item.price))
 
   const handleAdd = () => {
     const q = parseFloat(qty)
-    if (!q || q <= 0) { alert('Въведи количество!'); return }
+    if (!q || q <= 0) { alert(t('enterQty')); return }
     onAdd(item, qty, price)
     setQty('')
   }
@@ -241,7 +241,7 @@ function ServiceRow({ item, expanded, onToggle, onAdd }) {
         <div className="px-3 pb-3 bg-slate-50 flex gap-2 items-end">
           <div className="flex-1">
             <label className="block text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">
-              Количество ({item.unit})
+              {t('quantity')} ({item.unit})
             </label>
             <input
               type="number" min="0" step="0.1"
@@ -255,7 +255,7 @@ function ServiceRow({ item, expanded, onToggle, onAdd }) {
           </div>
           <div className="flex-1">
             <label className="block text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">
-              Цена / {item.unit}
+              {t('pricePerUnit')} / {item.unit}
             </label>
             <input
               type="number" min="0" step="0.5"
@@ -270,7 +270,7 @@ function ServiceRow({ item, expanded, onToggle, onAdd }) {
             className="px-4 py-2 rounded-lg text-white text-sm font-semibold flex-shrink-0 transition-opacity hover:opacity-90 active:scale-95"
             style={{ background: item.catColor }}
           >
-            + Добави
+            + {t('add')}
           </button>
         </div>
       )}

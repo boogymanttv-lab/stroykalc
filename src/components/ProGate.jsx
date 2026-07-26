@@ -1,52 +1,7 @@
 // ProGate — shows upgrade modal when a free user tries a PRO feature
 
-import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-
-// Context-specific info for each PRO feature
-const FEATURE_INFO = {
-  expenses: {
-    icon: '💸',
-    title: 'Разходи и реална печалба',
-    desc: 'Следете всеки разход по проект и виждайте реалната нетна печалба след материали, транспорт и труд.',
-  },
-  tasks: {
-    icon: '✅',
-    title: 'Задачи по проект',
-    desc: 'Управлявайте задачите си с чеклист — кое е свършено, кое чака. Никога не пропускайте стъпка.',
-  },
-  contract: {
-    icon: '📄',
-    title: 'Договори',
-    desc: 'Генерирайте официален договор с условия и подписи директно от проекта — за секунди.',
-  },
-  documents: {
-    icon: '📁',
-    title: 'Документи по проект',
-    desc: 'Всички издадени оферти и договори са запазени на едно място — достъпни дори без интернет.',
-  },
-  share: {
-    icon: '🔗',
-    title: 'Клиентски портал с QR код',
-    desc: 'Споделете офертата с линк или QR код — клиентът я вижда директно в браузъра без да влиза.',
-  },
-  photos: {
-    icon: '📷',
-    title: 'Снимки по проект',
-    desc: 'Документирайте напредъка с снимки преди и след — директно от телефона на обекта.',
-  },
-  reports: {
-    icon: '📊',
-    title: 'Отчети и CSV/Excel експорт',
-    desc: 'Виждайте приходите, разходите и нетната печалба за всеки период. Експортирайте с един клик.',
-  },
-}
-
-const DEFAULT_FEATURE = {
-  icon: '⚡',
-  title: 'PRO функция',
-  desc: 'Тази функция е достъпна само за PRO потребители.',
-}
+import { useLang } from '../contexts/LanguageContext'
 
 export function useProGate(onGoUpgrade) {
   const { profile } = useAuth()
@@ -63,7 +18,20 @@ export function useProGate(onGoUpgrade) {
 }
 
 export default function ProGateModal({ onClose, onUpgrade, feature }) {
-  const info = (feature && FEATURE_INFO[feature]) || DEFAULT_FEATURE
+  const { t } = useLang()
+
+  const FEATURE_INFO = {
+    expenses:  { icon: '💸', titleKey: 'featExpenses',  descKey: 'proFeatureExpenses' },
+    tasks:     { icon: '✅', titleKey: 'featTasks',     descKey: 'proFeatureTasks' },
+    contract:  { icon: '📄', titleKey: 'featContracts', descKey: 'proFeatureContract' },
+    documents: { icon: '📁', titleKey: 'featDocuments', descKey: 'proFeatureDocuments' },
+    share:     { icon: '🔗', titleKey: 'featQR',        descKey: 'proFeatureShare' },
+    photos:    { icon: '📷', titleKey: 'featPhotos',    descKey: 'proFeaturePhotos' },
+    reports:   { icon: '📊', titleKey: 'featReports',   descKey: 'proFeatureReports' },
+  }
+
+  const info = (feature && FEATURE_INFO[feature]) || { icon: '⚡', titleKey: null, descKey: 'proFeatureDefault' }
+  const title = info.titleKey ? t(info.titleKey) : 'PRO'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -75,9 +43,9 @@ export default function ProGateModal({ onClose, onUpgrade, feature }) {
           <span className="absolute -top-1 -right-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">PRO</span>
         </div>
 
-        <h2 className="text-lg font-black text-slate-800 mb-2">{info.title}</h2>
-        <p className="text-slate-500 text-sm mb-1 leading-relaxed">{info.desc}</p>
-        <p className="text-indigo-600 font-bold text-base mt-3 mb-5">само €2.99/месец</p>
+        <h2 className="text-lg font-black text-slate-800 mb-2">{title}</h2>
+        <p className="text-slate-500 text-sm mb-1 leading-relaxed">{t(info.descKey)}</p>
+        <p className="text-indigo-600 font-bold text-base mt-3 mb-5">{t('proGatePrice')}</p>
 
         <div className="space-y-2">
           <button
@@ -86,14 +54,14 @@ export default function ProGateModal({ onClose, onUpgrade, feature }) {
                        bg-gradient-to-r from-indigo-600 to-violet-700
                        hover:opacity-90 active:scale-[.98] transition-all"
           >
-            ⚡ Надградете сега
+            {t('upgradeNow')}
           </button>
           <button
             onClick={onClose}
             className="w-full py-2.5 rounded-xl font-semibold text-slate-500 text-sm
                        bg-slate-100 hover:bg-slate-200 transition-colors"
           >
-            Не сега
+            {t('notNow')}
           </button>
         </div>
       </div>

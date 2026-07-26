@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LanguageContext'
 import { supabase } from '../lib/supabase'
 import { db } from '../lib/db'
 
 const fmt = n =>
   '€ ' + Number(n).toLocaleString('bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-const MONTHS_BG = ['Яну','Фев','Мар','Апр','Май','Юни','Юли','Авг','Сеп','Окт','Ное','Дек']
+const MONTHS = {
+  bg: ['Яну','Фев','Мар','Апр','Май','Юни','Юли','Авг','Сеп','Окт','Ное','Дек'],
+  en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+}
 
-const STATUS_LABEL = {
-  draft:       'Чернова',
-  sent:        'Изпратена',
-  accepted:    'Приета',
-  in_progress: 'В процес',
-  completed:   'Завършена',
-  cancelled:   'Отказана',
+const STATUS_KEY = {
+  draft:       'statusDraft',
+  sent:        'statusSent',
+  accepted:    'statusAccepted',
+  in_progress: 'statusInProgress',
+  completed:   'statusCompleted',
+  cancelled:   'statusCancelled',
 }
 
 const STATUS_COLOR = {
@@ -28,6 +32,7 @@ const STATUS_COLOR = {
 
 export default function ReportsPage() {
   const { user } = useAuth()
+  const { t, lang } = useLang()
   const [projects, setProjects] = useState([])
   const [payments, setPayments] = useState([])
   const [loading,  setLoading]  = useState(true)
@@ -47,17 +52,13 @@ export default function ReportsPage() {
       setPayments(pays || [])
       setExpenses(exps || [])
     } else {
-      // Offline — read from IndexedDB with fallback
       try {
         let proj = await db.projects.where('user_id').equals(user.id).toArray()
         if (!proj.length) proj = await db.projects.toArray()
-
         let pays = await db.payments.where('user_id').equals(user.id).toArray()
         if (!pays.length) pays = await db.payments.toArray()
-
         let exps = await db.expenses.where('user_id').equals(user.id).toArray()
         if (!exps.length) exps = await db.expenses.toArray()
-
         setProjects(proj.map(p => ({ ...p, clients: p._client_name ? { name: p._client_name } : null })))
         setPayments(pays.sort((a, b) => new Date(a.paid_at) - new Date(b.paid_at)))
         setExpenses(exps)
@@ -71,50 +72,9 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-        Зареждане...
+        {t('loading')}
       </div>
     )
-  }
-
-  /* ── CSV Export ── */
-  function exportCSV() {
-    // Build paid + expense maps
-    const paidMap = {}
-    for (const p of payments) paidMap[p.project_id] = (paidMap[p.project_id] || 0) + Number(p.amount)
-    const expMap = {}
-    for (const e of expenses) expMap[e.project_id] = (expMap[e.project_id] || 0) + Number(e.amount)
-
-    const rows = [
-      ['Проект', 'Клиент', 'Статус', 'Стойност (€)', 'Получено (€)', 'Разходи (€)', 'Печалба (€)', 'Дата'],
-      ...projects.map(p => {
-        const paid = paidMap[p.id] || 0
-        const exp  = expMap[p.id]  || 0
-        return [
-          p.name,
-          p.clients?.name || '',
-          STATUS_LABEL[p.status] || p.status,
-          Number(p.total).toFixed(2),
-          paid.toFixed(2),
-          exp.toFixed(2),
-          (paid - exp).toFixed(2),
-          new Date(p.created_at).toLocaleDateString('bg-BG'),
-        ]
-      }),
-      [], // blank row
-      ['ОБЩО', '', '', totalValue.toFixed(2), totalReceived.toFixed(2), totalExpenses.toFixed(2), (totalReceived - totalExpenses).toFixed(2), ''],
-    ]
-
-    const csv = rows
-      .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-      .join('\n')
-
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
-    a.download = `Maistorix_Отчет_${new Date().toLocaleDateString('bg-BG')}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
   /* ── Derived stats ── */
@@ -124,23 +84,20 @@ export default function ReportsPage() {
   const outstanding   = totalValue - totalReceived
   const totalProfit   = totalReceived - totalExpenses
 
-  // Paid totals per project
   const paidMap = {}
   for (const p of payments) {
     paidMap[p.project_id] = (paidMap[p.project_id] || 0) + Number(p.amount)
   }
 
-  // Projects by status
   const statusCounts = {}
   for (const p of projects) {
     statusCounts[p.status] = (statusCounts[p.status] || 0) + 1
   }
 
-  // Monthly payments — last 6 months
   const now      = new Date()
   const months   = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
-    return { year: d.getFullYear(), month: d.getMonth(), label: MONTHS_BG[d.getMonth()] }
+    return { year: d.getFullYear(), month: d.getMonth(), label: MONTHS[lang][d.getMonth()] }
   })
   const monthTotals = months.map(m => {
     const sum = payments
@@ -153,68 +110,112 @@ export default function ReportsPage() {
   })
   const maxMonthVal = Math.max(...monthTotals.map(m => m.sum), 1)
 
-  // Recent payments (last 8)
   const recentPayments = [...payments].reverse().slice(0, 8)
+  const topProjects    = [...projects].sort((a, b) => Number(b.total) - Number(a.total)).slice(0, 5)
 
-  // Top projects by total
-  const topProjects = [...projects]
-    .sort((a, b) => Number(b.total) - Number(a.total))
-    .slice(0, 5)
+  /* ── CSV Export ── */
+  function exportCSV() {
+    const expMap = {}
+    for (const e of expenses) expMap[e.project_id] = (expMap[e.project_id] || 0) + Number(e.amount)
+
+    const headers = lang === 'en'
+      ? ['Project', 'Client', 'Status', 'Value (€)', 'Received (€)', 'Expenses (€)', 'Profit (€)', 'Date']
+      : ['Проект', 'Клиент', 'Статус', 'Стойност (€)', 'Получено (€)', 'Разходи (€)', 'Печалба (€)', 'Дата']
+
+    const rows = [
+      headers,
+      ...projects.map(p => {
+        const paid = paidMap[p.id] || 0
+        const exp  = expMap[p.id]  || 0
+        return [
+          p.name,
+          p.clients?.name || '',
+          t(STATUS_KEY[p.status] || 'noData'),
+          Number(p.total).toFixed(2),
+          paid.toFixed(2),
+          exp.toFixed(2),
+          (paid - exp).toFixed(2),
+          new Date(p.created_at).toLocaleDateString('bg-BG'),
+        ]
+      }),
+      [],
+      [lang === 'en' ? 'TOTAL' : 'ОБЩО', '', '', totalValue.toFixed(2), totalReceived.toFixed(2), totalExpenses.toFixed(2), (totalReceived - totalExpenses).toFixed(2), ''],
+    ]
+
+    const csv = rows
+      .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `Maistorix_${lang === 'en' ? 'Report' : 'Отчет'}_${new Date().toLocaleDateString('bg-BG')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const typeLabels = {
+    advance: t('paymentAdvance'),
+    payment: t('paymentPayment'),
+    final:   t('paymentFinal'),
+  }
+  const methIcons = { cash: '💵', bank: '🏦', card: '💳' }
 
   return (
     <div className="flex-1 overflow-y-auto thin-scroll p-4 max-w-2xl mx-auto w-full">
       <div className="space-y-5 pb-10">
 
-        {/* ── Export button ── */}
+        {/* Export button */}
         <div className="flex justify-end">
           <button
             onClick={exportCSV}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700
                        font-semibold text-sm hover:bg-emerald-100 transition-colors border border-emerald-200"
           >
-            📥 Експорт CSV / Excel
+            {t('exportCSVBtn')}
           </button>
         </div>
 
-        {/* ── Summary cards ── */}
+        {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3">
           <SummaryCard
-            icon="📁" label="Проекти" value={String(projects.length)}
-            sub={`${projects.filter(p => p.status === 'completed').length} завършени`}
+            icon="📁" label={t('projectsCount')} value={String(projects.length)}
+            sub={`${projects.filter(p => p.status === 'completed').length} ${t('summaryCompleted')}`}
             color="indigo"
           />
           <SummaryCard
-            icon="💼" label="Обща стойност" value={fmt(totalValue)}
-            sub="всички оферти"
+            icon="💼" label={t('summaryTotalValue')} value={fmt(totalValue)}
+            sub={t('summaryAllOffers')}
             color="violet"
           />
           <SummaryCard
-            icon="✅" label="Получено" value={fmt(totalReceived)}
-            sub="от клиенти"
+            icon="✅" label={t('summaryReceived')} value={fmt(totalReceived)}
+            sub={t('summaryFromClients')}
             color="emerald"
           />
           <SummaryCard
-            icon="⏳" label="Предстои" value={fmt(Math.max(0, outstanding))}
-            sub="незаплатено"
+            icon="⏳" label={t('summaryOutstanding')} value={fmt(Math.max(0, outstanding))}
+            sub={t('summaryUnpaid')}
             color={outstanding > 0 ? 'amber' : 'emerald'}
           />
           <SummaryCard
-            icon="💸" label="Разходи" value={fmt(totalExpenses)}
-            sub="материали, наем..."
+            icon="💸" label={t('totalExpenses')} value={fmt(totalExpenses)}
+            sub={t('summaryExpensesSub')}
             color="red"
           />
           <SummaryCard
-            icon="📈" label="Реална печалба" value={fmt(totalProfit)}
-            sub="получено − разходи"
+            icon="📈" label={t('summaryRealProfit')} value={fmt(totalProfit)}
+            sub={t('summaryProfitSub')}
             color={totalProfit >= 0 ? 'emerald' : 'red'}
           />
         </div>
 
-        {/* ── Monthly income bar chart ── */}
+        {/* Monthly income bar chart */}
         <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <h2 className="font-bold text-slate-700 mb-4">📊 Приходи по месеци</h2>
+          <h2 className="font-bold text-slate-700 mb-4">{t('chartMonthlyTitle')}</h2>
           {monthTotals.every(m => m.sum === 0) ? (
-            <p className="text-slate-400 text-sm text-center py-6">Няма регистрирани плащания</p>
+            <p className="text-slate-400 text-sm text-center py-6">{t('chartNoPayments')}</p>
           ) : (
             <div className="flex items-end gap-2 h-36">
               {monthTotals.map(m => {
@@ -241,11 +242,11 @@ export default function ReportsPage() {
           )}
         </section>
 
-        {/* ── Projects by status ── */}
+        {/* Projects by status */}
         <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <h2 className="font-bold text-slate-700 mb-4">📋 Проекти по статус</h2>
+          <h2 className="font-bold text-slate-700 mb-4">{t('chartByStatus')}</h2>
           {projects.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-4">Няма проекти</p>
+            <p className="text-slate-400 text-sm text-center py-4">{t('noProjectsReport')}</p>
           ) : (
             <div className="space-y-2.5">
               {Object.entries(statusCounts).map(([status, count]) => {
@@ -254,9 +255,9 @@ export default function ReportsPage() {
                   <div key={status}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-semibold text-slate-600">
-                        {STATUS_LABEL[status] || status}
+                        {t(STATUS_KEY[status] || 'noData')}
                       </span>
-                      <span className="text-xs text-slate-400">{count} бр. · {pct}%</span>
+                      <span className="text-xs text-slate-400">{count} {t('pcs')} · {pct}%</span>
                     </div>
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div
@@ -271,10 +272,10 @@ export default function ReportsPage() {
           )}
         </section>
 
-        {/* ── Top projects by value ── */}
+        {/* Top projects by value */}
         {topProjects.length > 0 && (
           <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <h2 className="font-bold text-slate-700 mb-4">🏆 Топ проекти по стойност</h2>
+            <h2 className="font-bold text-slate-700 mb-4">{t('chartTopProjects')}</h2>
             <div className="space-y-2">
               {topProjects.map((p, i) => {
                 const paid      = paidMap[p.id] || 0
@@ -293,10 +294,7 @@ export default function ReportsPage() {
                       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full"
-                          style={{
-                            width: `${paidPct}%`,
-                            background: fullyPaid ? '#10b981' : '#4f46e5',
-                          }}
+                          style={{ width: `${paidPct}%`, background: fullyPaid ? '#10b981' : '#4f46e5' }}
                         />
                       </div>
                     </div>
@@ -307,18 +305,18 @@ export default function ReportsPage() {
           </section>
         )}
 
-        {/* ── Recent payments ── */}
+        {/* Recent payments */}
         {recentPayments.length > 0 && (
           <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <h2 className="font-bold text-slate-700 mb-4">💸 Последни плащания</h2>
+            <h2 className="font-bold text-slate-700 mb-4">{t('chartRecentPayments')}</h2>
             <div className="space-y-2">
               {recentPayments.map(p => {
-                const proj = projects.find(x => x.id === p.project_id)
-                const typeLabel = { advance: 'Аванс', payment: 'Плащане', final: 'Финал' }[p.type] || p.type
-                const methLabel = { cash: '💵', bank: '🏦', card: '💳' }[p.method] || ''
+                const proj      = projects.find(x => x.id === p.project_id)
+                const typeLabel = typeLabels[p.type] || p.type
+                const methIcon  = methIcons[p.method] || ''
                 return (
                   <div key={p.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                    <div className="text-xl flex-shrink-0">{methLabel}</div>
+                    <div className="text-xl flex-shrink-0">{methIcon}</div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-slate-700 truncate">
                         {proj?.name || '—'}
@@ -341,8 +339,8 @@ export default function ReportsPage() {
         {projects.length === 0 && payments.length === 0 && (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📊</div>
-            <h3 className="text-lg font-semibold text-slate-600 mb-2">Няма данни за отчет</h3>
-            <p className="text-slate-400 text-sm">Запази проекти и регистрирай плащания, за да видиш статистиката</p>
+            <h3 className="text-lg font-semibold text-slate-600 mb-2">{t('noReportData')}</h3>
+            <p className="text-slate-400 text-sm">{t('noReportDataDesc')}</p>
           </div>
         )}
 

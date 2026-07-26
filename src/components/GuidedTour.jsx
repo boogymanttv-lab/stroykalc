@@ -1,143 +1,183 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import { useLang } from '../contexts/LanguageContext'
 
 const GUIDED_KEY = 'maistorix_guided_done'
 
-// waitFor:
-//   'manual' — user clicks "Следващо" button
-//   'click'  — auto-advance when spotlight element is clicked
-const STEPS = [
-  {
-    id:      'welcome',
-    tab:     null,
-    target:  null,
-    title:   '👋 Здравей! Нека те преведем.',
-    text:    'Ще извършиш реални действия в приложението — ние ти показваме какво да направиш на всяка стъпка.',
-    waitFor: 'manual',
-    btn:     'Да, започваме! →',
-  },
-  {
-    id:      'go-settings',
-    tab:     null,
-    target:  '[data-tour="settings-btn"]',
-    title:   '⚙️ Стъпка 1 — Фирмен профил',
-    text:    'Натисни „⚙️ Фирмен профил" за да попълниш данните на фирмата си.',
-    waitFor: 'click',
-  },
-  {
-    id:      'fill-settings',
-    tab:     'settings',
-    target:  null,
-    title:   '📝 Попълни данните на фирмата',
-    text:    'Въведи името на фирмата, телефон и адрес. Тези данни ще се появяват автоматично в офертите. Натисни „Запази" и след това „Следващо".',
-    waitFor: 'manual',
-    tip:     '💡 Натисни „Запази" след като попълниш',
-  },
-  {
-    id:      'go-clients',
-    tab:     null,
-    target:  '[data-tour="clients-tab"]',
-    title:   '👥 Стъпка 2 — Клиенти',
-    text:    'Натисни „👥 Клиенти" за да добавиш първия си клиент.',
-    waitFor: 'click',
-  },
-  {
-    id:      'new-client',
-    tab:     'clients',
-    target:  '[data-tour="new-client-btn"]',
-    title:   '➕ Добави нов клиент',
-    text:    'Натисни „+ Нов клиент" за да отвориш формата.',
-    waitFor: 'click',
-  },
-  {
-    id:      'fill-client',
-    tab:     'clients',
-    target:  null,
-    title:   '📋 Попълни данните на клиента',
-    text:    'Въведи име, телефон и адрес на клиента. Натисни „Запази" след което се върни тук.',
-    waitFor: 'manual',
-    tip:     '💡 Натисни „Запази" в модалния прозорец',
-  },
-  {
-    id:      'go-calc',
-    tab:     null,
-    target:  '[data-tour="calc-tab"]',
-    title:   '🧮 Стъпка 3 — Калкулатор',
-    text:    'Натисни „🧮 Калкулатор" за да създадеш оферта за клиента.',
-    waitFor: 'click',
-  },
-  {
-    id:      'select-client',
-    tab:     'calc',
-    target:  null,
-    title:   '👤 Избери клиента',
-    text:    'В полето „Клиент" избери клиента когото добави. Така офертата ще е свързана с него.',
-    waitFor: 'manual',
-    tip:     '💡 Натисни полето „Клиент" и избери от списъка',
-  },
-  {
-    id:      'add-service',
-    tab:     'calc',
-    target:  '[data-tour="add-service-btn"]',
-    title:   '➕ Добави услуга',
-    text:    'Натисни „+ Добави услуга" за да отвориш каталога с услуги.',
-    waitFor: 'click',
-  },
-  {
-    id:      'pick-service',
-    tab:     'calc',
-    target:  null,
-    title:   '🔧 Избери услуга от каталога',
-    text:    'Избери категория (напр. Зидария), натисни услуга, въведи количество и натисни „+ Добави". Добави 2-3 услуги.',
-    waitFor: 'manual',
-    tip:     '💡 Затвори каталога след като добавиш услугите',
-  },
-  {
-    id:      'save-project',
-    tab:     'calc',
-    target:  null,
-    title:   '💾 Запази проекта',
-    text:    'Въведи заглавие на проекта и натисни „Запази оферта". Проектът ще се появи в секция Проекти.',
-    waitFor: 'manual',
-    tip:     '💡 Натисни „Запази оферта" в долната част на страницата',
-  },
-  {
-    id:      'go-projects',
-    tab:     null,
-    target:  '[data-tour="projects-tab"]',
-    title:   '📁 Стъпка 4 — Проекти',
-    text:    'Натисни „📁 Проекти" за да видиш запазения проект.',
-    waitFor: 'click',
-  },
-  {
-    id:      'show-project-options',
-    tab:     'projects',
-    target:  null,
-    title:   '🎛️ Опции на проекта',
-    text:    'Натисни върху проекта за да видиш:\n\n📄 Оферта — PDF за клиента\n💰 Плащания — следи плащанията\n📋 Задачи — работни задачи\n📸 Снимки — от обекта\n🔗 Сподели — клиентски портал',
-    waitFor: 'manual',
-  },
-  {
-    id:      'done',
-    tab:     null,
-    target:  null,
-    title:   '🎉 Готов си!',
-    text:    'Вече знаеш как работи Maistorix. Създай реална оферта и я изпрати на клиент като PDF!',
-    waitFor: 'manual',
-    btn:     '🚀 Да започваме!',
-  },
-]
+// Steps are defined per language
+const STEPS_DATA = {
+  bg: [
+    {
+      id: 'welcome', tab: null, target: null, waitFor: 'manual',
+      btn: 'Да, започваме! →',
+      title: '👋 Здравей! Нека те преведем.',
+      text: 'Ще извършиш реални действия в приложението — ние ти показваме какво да направиш на всяка стъпка.',
+    },
+    {
+      id: 'go-settings', tab: null, target: '[data-tour="settings-btn"]', waitFor: 'click',
+      title: '⚙️ Стъпка 1 — Фирмен профил',
+      text: 'Натисни „⚙️ Фирмен профил" за да попълниш данните на фирмата си.',
+    },
+    {
+      id: 'fill-settings', tab: 'settings', target: null, waitFor: 'manual',
+      title: '📝 Попълни данните на фирмата',
+      text: 'Въведи името на фирмата, телефон и адрес. Тези данни ще се появяват автоматично в офертите. Натисни „Запази" и след това „Следващо".',
+      tip: '💡 Натисни „Запази промените" след като попълниш',
+    },
+    {
+      id: 'go-clients', tab: null, target: '[data-tour="clients-tab"]', waitFor: 'click',
+      title: '👥 Стъпка 2 — Клиенти',
+      text: 'Натисни „👥 Клиенти" за да добавиш първия си клиент.',
+    },
+    {
+      id: 'new-client', tab: 'clients', target: '[data-tour="new-client-btn"]', waitFor: 'click',
+      title: '➕ Добави нов клиент',
+      text: 'Натисни „+ Нов клиент" за да отвориш формата.',
+    },
+    {
+      id: 'fill-client', tab: 'clients', target: null, waitFor: 'manual',
+      title: '📋 Попълни данните на клиента',
+      text: 'Въведи ime, телефон и адрес на клиента. Натисни „Запази" след което се върни тук.',
+      tip: '💡 Натисни „Запази" в модалния прозорец',
+    },
+    {
+      id: 'go-calc', tab: null, target: '[data-tour="calc-tab"]', waitFor: 'click',
+      title: '🧮 Стъпка 3 — Калкулатор',
+      text: 'Натисни „🧮 Калкулатор" за да създадеш оферта за клиента.',
+    },
+    {
+      id: 'select-client', tab: 'calc', target: null, waitFor: 'manual',
+      title: '👤 Избери клиента',
+      text: 'В полето „Клиент" избери клиента когото добави. Така офертата ще е свързана с него.',
+      tip: '💡 Натисни полето „Клиент" и избери от списъка',
+    },
+    {
+      id: 'add-service', tab: 'calc', target: '[data-tour="add-service-btn"]', waitFor: 'click',
+      title: '➕ Добави услуга',
+      text: 'Натисни „+ Добави услуга" за да отвориш каталога с услуги.',
+    },
+    {
+      id: 'pick-service', tab: 'calc', target: null, waitFor: 'manual',
+      title: '🔧 Избери услуга от каталога',
+      text: 'Избери категория (напр. Зидария), натисни услуга, въведи количество и натисни „+ Добави". Добави 2-3 услуги.',
+      tip: '💡 Затвори каталога след като добавиш услугите',
+    },
+    {
+      id: 'save-project', tab: 'calc', target: null, waitFor: 'manual',
+      title: '💾 Запази проекта',
+      text: 'Въведи заглавие на проекта и натисни „Запази оферта". Проектът ще се появи в секция Проекти.',
+      tip: '💡 Натисни „Запази оферта" в долната част на страницата',
+    },
+    {
+      id: 'go-projects', tab: null, target: '[data-tour="projects-tab"]', waitFor: 'click',
+      title: '📁 Стъпка 4 — Проекти',
+      text: 'Натисни „📁 Проекти" за да видиш запазения проект.',
+    },
+    {
+      id: 'show-project-options', tab: 'projects', target: null, waitFor: 'manual',
+      title: '🎛️ Опции на проекта',
+      text: 'Натисни върху проекта за да видиш:\n\n📄 Оферта — PDF за клиента\n💰 Плащания — следи плащанията\n📋 Задачи — работни задачи\n📸 Снимки — от обекта\n🔗 Сподели — клиентски портал',
+    },
+    {
+      id: 'done', tab: null, target: null, waitFor: 'manual',
+      btn: '🚀 Да започваме!',
+      title: '🎉 Готов си!',
+      text: 'Вече знаеш как работи Maistorix. Създай реална оферта и я изпрати на клиент като PDF!',
+    },
+  ],
+  en: [
+    {
+      id: 'welcome', tab: null, target: null, waitFor: 'manual',
+      btn: "Let's go! →",
+      title: '👋 Welcome! Let us show you around.',
+      text: "You'll perform real actions in the app — we'll guide you step by step.",
+    },
+    {
+      id: 'go-settings', tab: null, target: '[data-tour="settings-btn"]', waitFor: 'click',
+      title: '⚙️ Step 1 — Company profile',
+      text: 'Click "⚙️ Company profile" to fill in your company details.',
+    },
+    {
+      id: 'fill-settings', tab: 'settings', target: null, waitFor: 'manual',
+      title: '📝 Fill in your company details',
+      text: 'Enter your company name, phone and address. This info will appear automatically in your offers. Click "Save changes" then click "Next".',
+      tip: '💡 Click "Save changes" after filling in',
+    },
+    {
+      id: 'go-clients', tab: null, target: '[data-tour="clients-tab"]', waitFor: 'click',
+      title: '👥 Step 2 — Clients',
+      text: 'Click "👥 Clients" to add your first client.',
+    },
+    {
+      id: 'new-client', tab: 'clients', target: '[data-tour="new-client-btn"]', waitFor: 'click',
+      title: '➕ Add a new client',
+      text: 'Click "+ New client" to open the form.',
+    },
+    {
+      id: 'fill-client', tab: 'clients', target: null, waitFor: 'manual',
+      title: '📋 Fill in the client details',
+      text: 'Enter the client name, phone and address. Click "Save" then come back here.',
+      tip: '💡 Click "Save" in the modal',
+    },
+    {
+      id: 'go-calc', tab: null, target: '[data-tour="calc-tab"]', waitFor: 'click',
+      title: '🧮 Step 3 — Calculator',
+      text: 'Click "🧮 Calculator" to create an offer for your client.',
+    },
+    {
+      id: 'select-client', tab: 'calc', target: null, waitFor: 'manual',
+      title: '👤 Select the client',
+      text: 'In the "Client" field, select the client you just added. This links the offer to them.',
+      tip: '💡 Click the "Client" field and pick from the list',
+    },
+    {
+      id: 'add-service', tab: 'calc', target: '[data-tour="add-service-btn"]', waitFor: 'click',
+      title: '➕ Add a service',
+      text: 'Click "+ Add service" to open the service catalogue.',
+    },
+    {
+      id: 'pick-service', tab: 'calc', target: null, waitFor: 'manual',
+      title: '🔧 Pick a service from the catalogue',
+      text: 'Choose a category (e.g. Masonry), click a service, enter a quantity and click "+ Add". Add 2-3 services.',
+      tip: '💡 Close the catalogue after adding services',
+    },
+    {
+      id: 'save-project', tab: 'calc', target: null, waitFor: 'manual',
+      title: '💾 Save the project',
+      text: 'Enter a project title and click "💾 Save". The project will appear in the Projects section.',
+      tip: '💡 Click "💾 Save" at the bottom of the page',
+    },
+    {
+      id: 'go-projects', tab: null, target: '[data-tour="projects-tab"]', waitFor: 'click',
+      title: '📁 Step 4 — Projects',
+      text: 'Click "📁 Projects" to see the saved project.',
+    },
+    {
+      id: 'show-project-options', tab: 'projects', target: null, waitFor: 'manual',
+      title: '🎛️ Project options',
+      text: 'Click on the project to see:\n\n📄 Offer — PDF for the client\n💰 Payments — track payments\n📋 Tasks — work checklist\n📸 Photos — from the site\n🔗 Share — client portal',
+    },
+    {
+      id: 'done', tab: null, target: null, waitFor: 'manual',
+      btn: '🚀 Let\'s go!',
+      title: '🎉 You\'re all set!',
+      text: 'You now know how Maistorix works. Create a real offer and send it to a client as a PDF!',
+    },
+  ],
+}
 
 export default function GuidedTour({ setTab, onDone }) {
+  const { lang, t } = useLang()
   const [step,    setStep]    = useState(0)
   const [visible, setVisible] = useState(false)
   const [rect,    setRect]    = useState(null)
+
+  const STEPS = STEPS_DATA[lang] || STEPS_DATA.bg
 
   useEffect(() => {
     if (localStorage.getItem(GUIDED_KEY)) { onDone?.(); return }
     setTimeout(() => setVisible(true), 500)
   }, [])
 
-  // Update spotlight rect when step changes
   useEffect(() => {
     if (!visible) return
     const s = STEPS[step]
@@ -145,7 +185,6 @@ export default function GuidedTour({ setTab, onDone }) {
 
     if (!s.target) { setRect(null); return }
 
-    // Try to find element (retry a few times for tabs that need render)
     let attempts = 0
     const tryFind = () => {
       const el = document.querySelector(s.target)
@@ -159,9 +198,8 @@ export default function GuidedTour({ setTab, onDone }) {
       }
     }
     setTimeout(tryFind, 300)
-  }, [step, visible])
+  }, [step, visible, lang])
 
-  // Auto-advance on click for 'click' steps
   useEffect(() => {
     if (!visible) return
     const s = STEPS[step]
@@ -170,12 +208,10 @@ export default function GuidedTour({ setTab, onDone }) {
     const el = document.querySelector(s.target)
     if (!el) return
 
-    const handler = () => {
-      setTimeout(() => advance(), 400) // small delay so navigation happens first
-    }
+    const handler = () => { setTimeout(() => advance(), 400) }
     el.addEventListener('click', handler)
     return () => el.removeEventListener('click', handler)
-  }, [step, visible, rect])
+  }, [step, visible, rect, lang])
 
   function advance() {
     setRect(null)
@@ -198,7 +234,6 @@ export default function GuidedTour({ setTab, onDone }) {
   const isLast = step === STEPS.length - 1
   const pad    = 8
 
-  // Tooltip position — always outside spotlight, clamped to viewport
   const CARD_W = 280
   const CARD_H = 300
 
@@ -218,19 +253,15 @@ export default function GuidedTour({ setTab, onDone }) {
     let top, left
 
     if (spaceRight >= CARD_W + 10) {
-      // Right of spotlight
       left = rect.right + pad
       top  = Math.max(pad, Math.min(rect.top, window.innerHeight - CARD_H - pad))
     } else if (spaceBottom >= CARD_H + 10) {
-      // Below spotlight
       top  = rect.bottom + pad
       left = Math.max(pad, Math.min(rect.left, window.innerWidth - CARD_W - pad))
     } else if (spaceTop >= CARD_H + 10) {
-      // Above spotlight
       top  = rect.top - CARD_H - pad
       left = Math.max(pad, Math.min(rect.left, window.innerWidth - CARD_W - pad))
     } else {
-      // Left of spotlight
       left = rect.left - CARD_W - pad
       top  = Math.max(pad, Math.min(rect.top, window.innerHeight - CARD_H - pad))
     }
@@ -242,14 +273,13 @@ export default function GuidedTour({ setTab, onDone }) {
 
   return (
     <>
-      {/* 4-rectangle overlay — spotlight area stays clickable */}
+      {/* 4-rectangle overlay — spotlight stays clickable */}
       {rect ? (
         <>
           <div style={{ position:'fixed', inset:0, top:0, left:0, right:0, height: Math.max(0, rect.top - pad), background: BG, zIndex:10000 }} />
           <div style={{ position:'fixed', top: rect.bottom + pad, left:0, right:0, bottom:0, background: BG, zIndex:10000 }} />
           <div style={{ position:'fixed', top: rect.top - pad, left:0, width: Math.max(0, rect.left - pad), height: rect.height + pad*2, background: BG, zIndex:10000 }} />
           <div style={{ position:'fixed', top: rect.top - pad, left: rect.right + pad, right:0, height: rect.height + pad*2, background: BG, zIndex:10000 }} />
-          {/* Spotlight border */}
           <div style={{
             position:'fixed',
             top: rect.top - pad, left: rect.left - pad,
@@ -280,7 +310,7 @@ export default function GuidedTour({ setTab, onDone }) {
           </div>
           <div style={{ color:'white', fontWeight:700, fontSize:13 }}>{s.title}</div>
           <div style={{ color:'rgba(255,255,255,0.6)', fontSize:10, marginTop:2 }}>
-            Стъпка {step + 1} от {STEPS.length}
+            {t('tourStep')} {step + 1} {t('tourOf')} {STEPS.length}
           </div>
         </div>
 
@@ -300,7 +330,7 @@ export default function GuidedTour({ setTab, onDone }) {
             onClick={finish}
             style={{ fontSize:11, color:'#94a3b8', background:'none', border:'none', cursor:'pointer' }}
           >
-            Пропусни
+            {t('tourSkip')}
           </button>
           {s.waitFor === 'manual' && (
             <button
@@ -311,12 +341,12 @@ export default function GuidedTour({ setTab, onDone }) {
                 fontSize:12, fontWeight:700, border:'none', cursor:'pointer',
               }}
             >
-              {s.btn || (isLast ? '🚀 Готово!' : 'Следващо →')}
+              {s.btn || (isLast ? t('tourDone') : t('tourNext'))}
             </button>
           )}
           {s.waitFor === 'click' && (
             <span style={{ fontSize:11, color:'#4f46e5', fontWeight:500 }}>
-              👆 Натисни маркирания елемент
+              {t('tourClickTarget')}
             </span>
           )}
         </div>

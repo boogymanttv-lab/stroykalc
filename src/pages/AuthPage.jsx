@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LanguageContext'
 
 export default function AuthPage() {
   const { signIn, signUp } = useAuth()
-  const [mode, setMode]       = useState('login')   // login | register
+  const { t, lang, setLang } = useLang()
+  const [mode, setMode]       = useState('login')
   const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -20,23 +22,23 @@ export default function AuthPage() {
     setError('')
 
     if (!isLogin && password !== confirm) {
-      setError('Паролите не съвпадат.'); return
+      setError(t('errPasswordsMatch')); return
     }
     if (password.length < 6) {
-      setError('Паролата трябва да е поне 6 символа.'); return
+      setError(t('errPasswordShort')); return
     }
     if (!isLogin && (!agreedTerms || !agreedPrivacy)) {
-      setError('Трябва да приемете Общите условия и Политиката за поверителност.'); return
+      setError(t('errAgreeTerms')); return
     }
 
     setLoading(true)
 
     if (isLogin) {
       const err = await signIn(email, password)
-      if (err) setError(translateError(err.message))
+      if (err) setError(translateError(err.message, t))
     } else {
       const err = await signUp(email, password)
-      if (err) setError(translateError(err.message))
+      if (err) setError(translateError(err.message, t))
       else setDone(true)
     }
 
@@ -45,19 +47,19 @@ export default function AuthPage() {
 
   if (done) {
     return (
-      <Screen>
+      <Screen lang={lang} setLang={setLang}>
         <div className="text-center">
           <div className="text-5xl mb-4">📧</div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Провери имейла си</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">{t('checkEmail')}</h2>
           <p className="text-slate-500 text-sm mb-6">
-            Изпратихме линк за потвърждение на <strong>{email}</strong>.<br />
-            Кликни го и след това влез тук.
+            {t('confirmSent')} <strong>{email}</strong>.<br />
+            {t('confirmClick')}
           </p>
           <button
             onClick={() => { setDone(false); setMode('login') }}
             className="text-indigo-600 font-semibold text-sm"
           >
-            ← Към Вход
+            {t('backToLogin')}
           </button>
         </div>
       </Screen>
@@ -65,12 +67,12 @@ export default function AuthPage() {
   }
 
   return (
-    <Screen>
+    <Screen lang={lang} setLang={setLang}>
       {/* Logo */}
       <div className="text-center mb-8">
         <div className="text-4xl mb-2">🏗️</div>
         <h1 className="text-2xl font-black text-slate-800">Maistorix</h1>
-        <p className="text-slate-400 text-sm mt-1">Калкулатор за ремонти и строителство</p>
+        <p className="text-slate-400 text-sm mt-1">{t('appTagline')}</p>
       </div>
 
       {/* Tabs */}
@@ -81,7 +83,7 @@ export default function AuthPage() {
             isLogin ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
           }`}
         >
-          Вход
+          {t('login')}
         </button>
         <button
           onClick={() => { setMode('register'); setError('') }}
@@ -89,7 +91,7 @@ export default function AuthPage() {
             !isLogin ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
           }`}
         >
-          Регистрация
+          {t('register')}
         </button>
       </div>
 
@@ -97,7 +99,7 @@ export default function AuthPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-            Имейл
+            {t('emailLabel')}
           </label>
           <input
             type="email" required
@@ -109,26 +111,26 @@ export default function AuthPage() {
 
         <div>
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-            Парола
+            {t('passwordLabel')}
           </label>
           <input
             type="password" required
             value={password} onChange={e => setPassword(e.target.value)}
             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 transition-colors"
-            placeholder="Минимум 6 символа"
+            placeholder={t('passwordMin')}
           />
         </div>
 
         {!isLogin && (
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-              Повтори парола
+              {t('repeatPassword')}
             </label>
             <input
               type="password" required
               value={confirm} onChange={e => setConfirm(e.target.value)}
               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 transition-colors"
-              placeholder="Повтори паролата"
+              placeholder={t('repeatPassPlaceholder')}
             />
           </div>
         )}
@@ -143,10 +145,10 @@ export default function AuthPage() {
                 className="mt-0.5 w-4 h-4 rounded accent-indigo-600 flex-shrink-0"
               />
               <span className="text-xs text-slate-600 leading-relaxed">
-                Прочетох и приемам{' '}
+                {t('agreeTerms')}{' '}
                 <a href="/terms.html" target="_blank" rel="noopener noreferrer"
                    className="text-indigo-600 underline font-semibold">
-                  Общите условия
+                  {t('termsLink')}
                 </a>
               </span>
             </label>
@@ -158,12 +160,12 @@ export default function AuthPage() {
                 className="mt-0.5 w-4 h-4 rounded accent-indigo-600 flex-shrink-0"
               />
               <span className="text-xs text-slate-600 leading-relaxed">
-                Запознат съм с{' '}
+                {t('agreePrivacy')}{' '}
                 <a href="/privacy.html" target="_blank" rel="noopener noreferrer"
                    className="text-indigo-600 underline font-semibold">
-                  Политиката за поверителност
+                  {t('privacyLink')}
                 </a>{' '}
-                и давам съгласие за обработка на личните ми данни
+                {t('privacyConsent')}
               </span>
             </label>
           </div>
@@ -182,15 +184,15 @@ export default function AuthPage() {
                      hover:opacity-90 active:scale-[.98] transition-all
                      disabled:opacity-60 disabled:cursor-not-allowed mt-2"
         >
-          {loading ? '⏳ Зареждане...' : isLogin ? 'Влез в акаунта' : 'Създай акаунт'}
+          {loading ? `⏳ ${t('loading')}` : isLogin ? t('loginBtn') : t('registerBtn')}
         </button>
       </form>
 
       {isLogin && (
         <p className="text-center text-xs text-slate-400 mt-4">
-          Нямаш акаунт?{' '}
+          {t('noAccount')}{' '}
           <button onClick={() => setMode('register')} className="text-indigo-600 font-semibold">
-            Регистрирай се
+            {t('registerLink')}
           </button>
         </p>
       )}
@@ -198,19 +200,27 @@ export default function AuthPage() {
   )
 }
 
-function Screen({ children }) {
+function Screen({ children, lang, setLang }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 relative">
+        {/* Language toggle */}
+        <button
+          onClick={() => setLang(lang === 'bg' ? 'en' : 'bg')}
+          className="absolute top-4 right-4 text-xs font-bold px-2 py-1 rounded-lg
+                     bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+        >
+          {lang === 'bg' ? '🇬🇧 EN' : '🇧🇬 BG'}
+        </button>
         {children}
       </div>
     </div>
   )
 }
 
-function translateError(msg) {
-  if (msg.includes('Invalid login'))   return 'Грешен имейл или парола.'
-  if (msg.includes('already registered')) return 'Този имейл вече е регистриран.'
-  if (msg.includes('Email not confirmed')) return 'Потвърди имейла си първо.'
+function translateError(msg, t) {
+  if (msg.includes('Invalid login'))        return t('errInvalidLogin')
+  if (msg.includes('already registered'))   return t('errAlreadyRegistered')
+  if (msg.includes('Email not confirmed'))  return t('errEmailNotConfirmed')
   return msg
 }
