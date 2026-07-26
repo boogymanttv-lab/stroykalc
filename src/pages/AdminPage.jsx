@@ -20,9 +20,16 @@ const STATUS_COLOR = {
   pending_delete:       'bg-red-100 text-red-600',
 }
 
+const TICKET_STATUS_COLOR = {
+  new:      'bg-blue-100 text-blue-700',
+  pending:  'bg-amber-100 text-amber-700',
+  resolved: 'bg-emerald-100 text-emerald-700',
+}
+const TICKET_STATUS_LABEL = { new: 'Ново', pending: 'В изчакване', resolved: 'Решено' }
+
 export default function AdminPage() {
   const { user } = useAuth()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [users,   setUsers]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
@@ -32,7 +39,34 @@ export default function AdminPage() {
   const [userData, setUserData]   = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
 
-  useEffect(() => { loadUsers() }, [])
+  // Support tickets
+  const [tickets,       setTickets]       = useState([])
+  const [ticketsTab,    setTicketsTab]    = useState('all')
+  const [ticketLoading, setTicketLoading] = useState(false)
+  const [adminNote,     setAdminNote]     = useState({})
+
+  useEffect(() => { loadUsers(); loadTickets() }, [])
+
+  async function loadTickets() {
+    setTicketLoading(true)
+    const { data } = await supabase
+      .from('support_tickets')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setTickets(data || [])
+    setTicketLoading(false)
+  }
+
+  async function updateTicketStatus(id, status) {
+    await supabase.from('support_tickets').update({ status }).eq('id', id)
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
+  }
+
+  async function saveAdminNote(id) {
+    const note = adminNote[id] || ''
+    await supabase.from('support_tickets').update({ admin_note: note }).eq('id', id)
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, admin_note: note } : t))
+  }
 
   async function loadUsers() {
     setLoading(true)
@@ -233,6 +267,101 @@ export default function AdminPage() {
           }
         </div>
         <p className="text-center text-xs text-slate-300">{filtered.length} {t('adminUsersShown')}</p>
+
+        {/* ── Support Tickets ── */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-slate-700 text-sm">
+                🎧 {lang === 'en' ? 'Support tickets' : 'Съпорт тикети'}
+              </h3>
+              {tickets.filter(t => t.status === 'new').length > 0 && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">
+                  {tickets.filter(t => t.status === 'new').length} {lang === 'en' ? 'new' : 'нови'}
+                </span>
+              )}
+            </div>
+            <div className="flex gap-1.5">
+              {['all', 'new', 'pending', 'resolved'].map(s => (
+                <button key={s} onClick={() => setTicketsTab(s)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors
+                    ${ticketsTab === s ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                  {s === 'all' ? (lang === 'en' ? 'All' : 'Всички')
+                    : TICKET_STATUS_LABEL[s]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {ticketLoading ? (
+            <p className="text-xs text-slate-400 text-center py-4">{t('loading')}</p>
+          ) : tickets.filter(t => ticketsTab === 'all' || t.status === ticketsTab).length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-4">
+              {lang === 'en' ? 'No tickets.' : 'Няма тикети.'}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {tickets
+                .filter(tk => ticketsTab === 'all' || tk.status === ticketsTab)
+                .map(tk => (
+                  <div key={tk.id}
+                    className={`bg-white border rounded-2xl p-4 ${tk.status === 'new' ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'}`}>
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-xs font-bold text-slate-800">{tk.subject}</span>
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${TICKET_STATUS_COLOR[tk.status]}`}>
+                            {TICKET_STATUS_LABEL[tk.status]}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mb-0.5">
+                          {tk.name} · {tk.email}
+                        </p>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">{tk.message}</p>
+                        <p className="text-[10px] text-slate-300 mt-1">
+                          {new Date(tk.created_at).toLocaleString('bg-BG')}
+                        </p>
+                        {/* Admin note */}
+                        <div className="mt-2 flex gap-1.5">
+                          <input
+                            type="text"
+                            value={adminNote[tk.id] ?? (tk.admin_note || '')}
+                            onChange={e => setAdminNote(n => ({ ...n, [tk.id]: e.target.value }))}
+                            placeholder={lang === 'en' ? 'Internal note...' : 'Вътрешна бележка...'}
+                            className="flex-1 px-2 py-1 text-[11px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                          />
+                          <button onClick={() => saveAdminNote(tk.id)}
+                            className="px-2 py-1 text-[11px] rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold transition-colors">
+                            {lang === 'en' ? 'Save' : 'Запази'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5 flex-shrink-0">
+                        <a href={`mailto:${tk.email}?subject=Re: ${encodeURIComponent(tk.subject)}`}
+                          className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition-colors text-center">
+                          ✉️ {lang === 'en' ? 'Reply' : 'Отговори'}
+                        </a>
+                        {tk.status !== 'resolved' && (
+                          <button onClick={() => updateTicketStatus(tk.id, 'resolved')}
+                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 transition-colors">
+                            ✅ {lang === 'en' ? 'Resolve' : 'Реши'}
+                          </button>
+                        )}
+                        {tk.status !== 'pending' && tk.status !== 'resolved' && (
+                          <button onClick={() => updateTicketStatus(tk.id, 'pending')}
+                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-100 transition-colors">
+                            ⏳ {lang === 'en' ? 'Pending' : 'В изчакване'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* User data modal */}

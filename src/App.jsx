@@ -12,6 +12,7 @@ import OverdueAlert from './components/OverdueAlert'
 import SyncStatus from './components/SyncStatus'
 import UpgradePage from './pages/UpgradePage'
 import AdminPage from './pages/AdminPage'
+import SupportPage from './pages/SupportPage'
 import OnboardingTour from './components/OnboardingTour'
 import { syncDown } from './lib/syncService'
 
@@ -193,6 +194,13 @@ function AppInner() {
           >
             ⚙️ {lang === 'en' ? 'Company profile' : 'Фирмен профил'}
           </button>
+          <button
+            onClick={() => setTab('support')}
+            className={`flex items-center gap-2 w-full text-xs font-medium transition-colors
+                        ${tab === 'support' ? 'text-white' : 'text-white/50 hover:text-white'}`}
+          >
+            🎧 {lang === 'en' ? 'Support' : 'Съпорт'}
+          </button>
           <div className="flex items-center justify-between">
             <button
               onClick={signOut}
@@ -229,6 +237,13 @@ function AppInner() {
                 🛡️
               </button>
             )}
+            <button
+              onClick={() => setTab('support')}
+              className={`text-base transition-opacity ${tab === 'support' ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
+              title={lang === 'en' ? 'Support' : 'Съпорт'}
+            >
+              🎧
+            </button>
             <button
               data-tour="settings-btn"
               onClick={() => setTab('settings')}
@@ -278,6 +293,7 @@ function AppInner() {
           {tab === 'upgrade'  && <UpgradePage />}
           {tab === 'admin'    && user?.email === ADMIN_EMAIL && <AdminPage />}
           {tab === 'settings' && <SettingsPage />}
+          {tab === 'support'  && <SupportPage />}
         </main>
 
         {/* Mobile bottom nav */}
