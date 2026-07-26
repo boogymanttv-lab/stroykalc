@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LanguageContext'
 import { supabase } from '../lib/supabase'
+import { showToast } from '../lib/toast'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
 const fmt = n => '€ ' + Number(n || 0).toLocaleString('bg-BG', { minimumFractionDigits: 2 })
@@ -97,7 +98,7 @@ export default function AdminPage() {
     if (data.ok) {
       await loadUsers()
     } else {
-      alert(t('error') + ': ' + data.error)
+      showToast(t('error') + ': ' + data.error, 'error')
     }
   }
 

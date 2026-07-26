@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SERVICES } from '../data/services'
 import { useLang } from '../contexts/LanguageContext'
+import { showToast } from '../lib/toast'
 
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2)
 
@@ -218,7 +219,7 @@ function ServiceRow({ item, expanded, onToggle, onAdd }) {
 
   const handleAdd = () => {
     const q = parseFloat(qty)
-    if (!q || q <= 0) { alert(t('enterQty')); return }
+    if (!q || q <= 0) { showToast(t('enterQty'), 'warning'); return }
     onAdd(item, qty, price)
     setQty('')
   }

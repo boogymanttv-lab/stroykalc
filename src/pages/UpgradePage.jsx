@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LanguageContext'
+import { showToast } from '../lib/toast'
 
 export default function UpgradePage() {
   const { user, profile } = useAuth()
@@ -64,7 +65,7 @@ export default function UpgradePage() {
       const data = await res.json()
       if (data.url) window.location.href = data.url
     } catch (e) {
-      alert(t('error') + ': ' + e.message)
+      showToast(t('error') + ': ' + e.message, 'error')
     }
     setPortalLoading(false)
   }

@@ -1,3 +1,5 @@
+import { showToast } from './toast.js'
+
 const fmt = (n, lang = 'bg') =>
   '€ ' + Number(n).toLocaleString(lang === 'en' ? 'en-GB' : 'bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -278,9 +280,9 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
     win.document.write(html)
     win.document.close()
   } else {
-    alert(lang === 'en'
+    showToast(lang === 'en'
       ? 'Please allow pop-ups for maistorix.com'
-      : 'Моля, разреши изскачащите прозорци (pop-ups) в браузъра!')
+      : 'Моля, разреши изскачащите прозорци (pop-ups) в браузъра!', 'warning')
   }
   return html
 }
@@ -475,9 +477,9 @@ export function generateContractPDF({ profile, client, project, lang = 'bg' }) {
     win.document.write(html)
     win.document.close()
   } else {
-    alert(lang === 'en'
+    showToast(lang === 'en'
       ? 'Please allow pop-ups for maistorix.com'
-      : 'Моля, разреши изскачащите прозорци (pop-ups) в браузъра!')
+      : 'Моля, разреши изскачащите прозорци (pop-ups) в браузъра!', 'warning')
   }
   return html
 }

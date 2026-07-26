@@ -14,6 +14,7 @@ import UpgradePage from './pages/UpgradePage'
 import AdminPage from './pages/AdminPage'
 import SupportPage from './pages/SupportPage'
 import OnboardingTour from './components/OnboardingTour'
+import Toaster from './components/Toaster'
 import { syncDown } from './lib/syncService'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
@@ -321,6 +322,7 @@ function AppInner() {
       </div>
     </div>
     <CookieBanner />
+    <Toaster />
     </>
   )
 }

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { db } from '../lib/db'
 import { offlineInsert, offlineUpdate } from '../lib/syncService'
 import { generateOfferPDF, generateContractPDF } from '../lib/pdf'
+import { showToast } from '../lib/toast'
 import { saveDocument } from '../lib/documents'
 import ServicePicker from './ServicePicker'
 import PDFLangPicker from './PDFLangPicker'
@@ -131,7 +132,7 @@ export default function Calculator({ editProjectId }) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i))
 
   async function saveProject() {
-    if (items.length === 0) { alert(t('noServices')); return }
+    if (items.length === 0) { showToast(t('noServices'), 'warning'); return }
     setSaving(true)
     const name      = projectName.trim() || 'Проект ' + new Date().toLocaleDateString('bg-BG')
     const offer_num = offerNumber.trim() || ('OF-' + Date.now().toString().slice(-6))
@@ -152,7 +153,7 @@ export default function Calculator({ editProjectId }) {
     }
     setSaving(false)
     localStorage.removeItem(draftKey)
-    alert('✅ ' + t('saved').replace('✅ ', ''))
+    showToast(t('saved').replace('✅ ', ''), 'success')
   }
 
   async function getClientData() {
@@ -166,7 +167,7 @@ export default function Calculator({ editProjectId }) {
 
   // Open PDF lang picker for Offer
   function openOfferPicker() {
-    if (items.length === 0) { alert(t('noServices')); return }
+    if (items.length === 0) { showToast(t('noServices'), 'warning'); return }
     setPdfLangCtx({
       type: 'offer',
       onGenerate: async (pdfLang) => {
@@ -192,7 +193,7 @@ export default function Calculator({ editProjectId }) {
 
   // Open PDF lang picker for Contract
   function openContractPicker() {
-    if (items.length === 0) { alert(t('noServices')); return }
+    if (items.length === 0) { showToast(t('noServices'), 'warning'); return }
     setPdfLangCtx({
       type: 'contract',
       onGenerate: async (pdfLang) => {
@@ -217,7 +218,7 @@ export default function Calculator({ editProjectId }) {
   const [shareCopied, setShareCopied] = useState(false)
 
   async function handleShare() {
-    if (!savedId) { alert(t('saveFirst')); return }
+    if (!savedId) { showToast(t('saveFirst'), 'warning'); return }
     const { data: existing } = await supabase
       .from('projects').select('share_token').eq('id', savedId).single()
     let token = existing?.share_token
