@@ -36,17 +36,8 @@ export default function PDFViewer() {
   }
 
   function handleDownload() {
-    try {
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-      const url  = URL.createObjectURL(blob)
-      const a    = document.createElement('a')
-      a.href     = url
-      a.download = `${filename}.html`
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch (e) {
-      showToast(lang === 'en' ? 'Download failed' : 'Грешка при изтегляне', 'error')
-    }
+    // Trigger print dialog → user selects "Save as PDF" for a proper PDF file
+    iframeRef.current?.contentWindow?.print()
   }
 
   async function handleShare() {
@@ -114,26 +105,15 @@ export default function PDFViewer() {
             📤 <span className="hidden sm:inline">{lang === 'en' ? 'Share' : 'Сподели'}</span>
           </button>
 
-          {/* Download */}
-          <button
-            onClick={handleDownload}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl
-                       bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold
-                       active:scale-[.97] transition-all"
-            title={lang === 'en' ? 'Download' : 'Изтегли'}
-          >
-            💾 <span className="hidden sm:inline">{lang === 'en' ? 'Download' : 'Изтегли'}</span>
-          </button>
-
-          {/* Print / Save PDF */}
+          {/* Save as PDF / Print */}
           <button
             onClick={handlePrint}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl
                        bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold
                        active:scale-[.97] transition-all"
-            title={lang === 'en' ? 'Print / Save PDF' : 'Принтирай / PDF'}
+            title={lang === 'en' ? 'Save as PDF / Print' : 'Запази PDF / Принтирай'}
           >
-            🖨️ <span className="hidden sm:inline">{lang === 'en' ? 'Print / PDF' : 'Принтирай'}</span>
+            🖨️ <span className="hidden sm:inline">{lang === 'en' ? 'Save PDF' : 'Запази PDF'}</span>
           </button>
         </div>
       </div>

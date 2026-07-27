@@ -173,9 +173,27 @@ export default function Calculator({ editProjectId }) {
       onGenerate: async (pdfLang) => {
         const clientData = await getClientData()
         const num = offerNumber || ('OF-' + Date.now().toString().slice(-6))
+
+        // Get or create share token so PDFViewer can share a proper URL
+        let resolvedShareUrl = shareUrl || null
+        if (!resolvedShareUrl && savedId) {
+          try {
+            const { data: existing } = await supabase
+              .from('projects').select('share_token').eq('id', savedId).single()
+            let token = existing?.share_token
+            if (!token) {
+              token = crypto.randomUUID()
+              await supabase.from('projects').update({ share_token: token }).eq('id', savedId)
+            }
+            resolvedShareUrl = `${window.location.origin}${window.location.pathname}#share/${token}`
+            setShareUrl(resolvedShareUrl)
+          } catch { /* no share url, not critical */ }
+        }
+
         const html = generateOfferPDF({
           profile, client: clientData,
           isPro: profile?.plan === 'pro',
+          shareUrl: resolvedShareUrl,
           project: {
             name: projectName || 'Проект', address: projectAddress, notes, items,
             subtotal, vat: vatOn, vat_amount: vatAmt, total,
