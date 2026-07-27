@@ -51,21 +51,27 @@ export default function PDFViewer() {
 
   async function handleShare() {
     try {
-      const blob = new Blob([html], { type: 'text/html' })
-      const file = new File([blob], `${filename}.html`, { type: 'text/html' })
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: filename })
-      } else if (navigator.share) {
-        await navigator.share({ title: filename, text: filename })
-      } else {
-        handleDownload()
-        showToast(
-          lang === 'en'
-            ? 'Share not supported — file downloaded'
-            : 'Споделянето не се поддържа — файлът е изтеглен',
-          'info'
-        )
+      // Best case: share the live client portal URL (looks great, no code visible)
+      if (meta.shareUrl) {
+        if (navigator.share) {
+          await navigator.share({ url: meta.shareUrl, title: filename })
+        } else {
+          // Desktop fallback: copy to clipboard
+          await navigator.clipboard.writeText(meta.shareUrl)
+          showToast(
+            lang === 'en' ? 'Link copied to clipboard' : 'Линкът е копиран',
+            'success'
+          )
+        }
+        return
       }
+
+      // Fallback for contracts / documents without a share URL: download the file
+      handleDownload()
+      showToast(
+        lang === 'en' ? 'File downloaded' : 'Файлът е изтеглен',
+        'info'
+      )
     } catch (e) {
       if (e.name !== 'AbortError') {
         showToast(lang === 'en' ? 'Share failed' : 'Грешка при споделяне', 'error')

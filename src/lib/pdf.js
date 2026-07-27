@@ -279,7 +279,7 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
   const offerName = project.offer_number
     ? `${lang === 'en' ? 'Offer' : 'Оферта'}-${project.offer_number}`
     : (lang === 'en' ? 'Offer' : 'Оферта')
-  openPDFViewer(html, { name: offerName, type: 'offer' })
+  openPDFViewer(html, { name: offerName, type: 'offer', shareUrl: shareUrl || null })
   return html
 }
 
