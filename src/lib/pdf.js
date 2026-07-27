@@ -1,3 +1,4 @@
+import QRCode from 'qrcode'
 import { showToast } from './toast.js'
 import { openPDFViewer } from './pdfViewer.js'
 
@@ -84,7 +85,19 @@ function s(key, lang) {
 // ─────────────────────────────────────────────────────────────
 // OFFER PDF
 // ─────────────────────────────────────────────────────────────
-export function generateOfferPDF({ profile, client, project, shareUrl, isPro = false, lang = 'bg' }) {
+export async function generateOfferPDF({ profile, client, project, shareUrl, isPro = false, lang = 'bg' }) {
+  // Generate QR code as data URL (offline-safe, no external API)
+  let qrDataUrl = null
+  if (shareUrl) {
+    try {
+      qrDataUrl = await QRCode.toDataURL(shareUrl, {
+        width: 100,
+        margin: 1,
+        color: { dark: '#4f46e5', light: '#ffffff' },
+      })
+    } catch { /* QR generation failed, skip */ }
+  }
+
   // Group items by category
   const grouped = {}
   for (const item of (project.items || [])) {
@@ -244,10 +257,10 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
 
   <!-- QR code + Signatures -->
   <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:30px;gap:20px">
-    ${shareUrl ? `
+    ${qrDataUrl ? `
     <div style="text-align:center;flex-shrink:0">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(shareUrl)}&color=4f46e5"
-           width="100" height="100" style="border-radius:8px;border:2px solid #e2e8f0" alt="QR" />
+      <img src="${qrDataUrl}" width="100" height="100"
+           style="border-radius:8px;border:2px solid #e2e8f0" alt="QR" />
       <div style="font-size:9px;color:#94a3b8;margin-top:4px">${s('qrHint', lang)}</div>
     </div>` : '<div></div>'}
     <div style="flex:1">

@@ -144,7 +144,7 @@ export default function ProjectsPage({ onEdit, onNew, onGoUpgrade }) {
           await supabase.from('projects').update({ share_token: token }).eq('id', p.id)
         }
         const shareUrl = `${window.location.origin}${window.location.pathname}#share/${token}`
-        const html = generateOfferPDF({
+        const html = await generateOfferPDF({
           profile: prof, client, shareUrl,
           isPro: prof?.plan === 'pro',
           project: {

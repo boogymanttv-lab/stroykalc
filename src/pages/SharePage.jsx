@@ -94,7 +94,7 @@ export default function SharePage({ token }) {
               offer_date: new Date(project.offer_date || project.created_at).toLocaleDateString('bg-BG'),
               vat: project.vat,
               vat_amount: project.vat_amount,
-            }})}
+            }, shareUrl: window.location.href })}
             className="text-xs px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 font-semibold transition-colors"
           >
             🖨️ PDF

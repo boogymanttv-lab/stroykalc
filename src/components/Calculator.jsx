@@ -190,7 +190,7 @@ export default function Calculator({ editProjectId }) {
           } catch { /* no share url, not critical */ }
         }
 
-        const html = generateOfferPDF({
+        const html = await generateOfferPDF({
           profile, client: clientData,
           isPro: profile?.plan === 'pro',
           shareUrl: resolvedShareUrl,
