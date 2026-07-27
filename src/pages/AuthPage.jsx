@@ -162,7 +162,7 @@ export default function AuthPage() {
           </h2>
           <p className="text-sm text-slate-400 mt-1">
             {lang === 'en'
-              ? 'Enter your email and we'll send you a reset link.'
+              ? "Enter your email and we'll send you a reset link."
               : 'Въведете имейла си и ще ви изпратим линк за нова парола.'}
           </p>
         </div>
