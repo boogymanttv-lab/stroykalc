@@ -17,6 +17,7 @@ import OnboardingTour from './components/OnboardingTour'
 import Toaster from './components/Toaster'
 import PDFViewer from './components/PDFViewer'
 import { syncDown } from './lib/syncService'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
 
@@ -72,11 +73,21 @@ function AppInner() {
   const urlParams = new URLSearchParams(window.location.search)
   const shortcut  = urlParams.get('shortcut')
   const [tab, setTab] = useState(shortcut || 'calc')
+  const [isRecovery, setIsRecovery] = useState(() => {
+    const h = window.location.hash
+    const p = new URLSearchParams(h.slice(1))
+    return p.get('type') === 'recovery'
+  })
 
   // ── Share / Client portal route ──
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
   if (hash.startsWith('#share/')) {
     return <SharePage token={hash.slice('#share/'.length)} />
+  }
+
+  // ── Password recovery route ──
+  if (isRecovery) {
+    return <ResetPasswordPage onDone={() => setIsRecovery(false)} />
   }
 
   const [calcKey,       setCalcKey]       = useState(0)

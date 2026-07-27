@@ -199,6 +199,9 @@ export default function SettingsPage() {
           {saving ? t('savingChangesBtn') : saved ? t('savedChangesBtn') : t('saveChangesBtn')}
         </button>
 
+        {/* Change password */}
+        <ChangePassword user={user} />
+
         {/* Account management */}
         <AccountManagement user={user} />
 
@@ -346,6 +349,121 @@ function AccountManagement({ user }) {
         </div>
       )}
     </div>
+  )
+}
+
+function ChangePassword({ user }) {
+  const [open,        setOpen]        = useState(false)
+  const [current,     setCurrent]     = useState('')
+  const [newPass,     setNewPass]     = useState('')
+  const [confirm,     setConfirm]     = useState('')
+  const [showCurrent, setShowCurrent] = useState(false)
+  const [showNew,     setShowNew]     = useState(false)
+  const [showConf,    setShowConf]    = useState(false)
+  const [loading,     setLoading]     = useState(false)
+  const [msg,         setMsg]         = useState('')
+  const [success,     setSuccess]     = useState(false)
+
+  async function handleChange() {
+    setMsg('')
+    if (!current)           { setMsg('Въведете текущата парола.'); return }
+    if (newPass.length < 6) { setMsg('Новата парола трябва да е поне 6 символа.'); return }
+    if (newPass !== confirm) { setMsg('Новите пароли не съвпадат.'); return }
+
+    setLoading(true)
+    // Verify current password
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
+      email: user.email, password: current,
+    })
+    if (signInErr) { setMsg('Текущата парола е грешна.'); setLoading(false); return }
+
+    // Update to new password
+    const { error: updateErr } = await supabase.auth.updateUser({ password: newPass })
+    setLoading(false)
+    if (updateErr) { setMsg(updateErr.message); return }
+
+    setSuccess(true)
+    setCurrent(''); setNewPass(''); setConfirm('')
+    setTimeout(() => { setSuccess(false); setOpen(false) }, 2500)
+  }
+
+  return (
+    <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-slate-700">🔑 Смяна на парола</h2>
+        {!open && (
+          <button
+            onClick={() => { setOpen(true); setMsg(''); setSuccess(false) }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 font-semibold hover:bg-indigo-100 transition-colors"
+          >
+            Смени
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="mt-4 space-y-3">
+          {/* Current password */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Текуща парола</label>
+            <div className="relative">
+              <input type={showCurrent ? 'text' : 'password'} value={current}
+                onChange={e => setCurrent(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 pr-10 text-sm outline-none focus:border-indigo-400"
+                placeholder="Текуща парола" />
+              <button type="button" onClick={() => setShowCurrent(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" tabIndex={-1}>
+                {showCurrent ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
+          {/* New password */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Нова парола</label>
+            <div className="relative">
+              <input type={showNew ? 'text' : 'password'} value={newPass}
+                onChange={e => setNewPass(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 pr-10 text-sm outline-none focus:border-indigo-400"
+                placeholder="Минимум 6 символа" />
+              <button type="button" onClick={() => setShowNew(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" tabIndex={-1}>
+                {showNew ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm new */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Повтори новата парола</label>
+            <div className="relative">
+              <input type={showConf ? 'text' : 'password'} value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 pr-10 text-sm outline-none focus:border-indigo-400"
+                placeholder="Повтори новата парола" />
+              <button type="button" onClick={() => setShowConf(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" tabIndex={-1}>
+                {showConf ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
+          {msg     && <p className="text-xs text-red-600">⚠️ {msg}</p>}
+          {success && <p className="text-xs text-emerald-600">✅ Паролата е сменена успешно!</p>}
+
+          <div className="flex gap-2 pt-1">
+            <button onClick={() => { setOpen(false); setMsg('') }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">
+              Откажи
+            </button>
+            <button onClick={handleChange} disabled={loading}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors">
+              {loading ? '⏳...' : 'Запази'}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   )
 }
 
