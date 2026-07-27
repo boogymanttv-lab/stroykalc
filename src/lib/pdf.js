@@ -276,7 +276,10 @@ export function generateOfferPDF({ profile, client, project, shareUrl, isPro = f
 </body>
 </html>`
 
-  openPDFViewer(html)
+  const offerName = project.offer_number
+    ? `${lang === 'en' ? 'Offer' : 'Оферта'}-${project.offer_number}`
+    : (lang === 'en' ? 'Offer' : 'Оферта')
+  openPDFViewer(html, { name: offerName, type: 'offer' })
   return html
 }
 
@@ -465,6 +468,9 @@ export function generateContractPDF({ profile, client, project, lang = 'bg' }) {
 </body>
 </html>`
 
-  openPDFViewer(html)
+  const contractName = project.name
+    ? `${lang === 'en' ? 'Contract' : 'Договор'}-${project.name}`
+    : (lang === 'en' ? 'Contract' : 'Договор')
+  openPDFViewer(html, { name: contractName, type: 'contract' })
   return html
 }

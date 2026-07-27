@@ -1,7 +1,8 @@
 const listeners = []
 
-export function openPDFViewer(html) {
-  listeners.forEach(fn => fn(html))
+// meta: { name?: string, type?: 'offer' | 'contract' | 'document' }
+export function openPDFViewer(html, meta = {}) {
+  listeners.forEach(fn => fn({ html, meta }))
 }
 
 export function onPDFViewer(fn) {

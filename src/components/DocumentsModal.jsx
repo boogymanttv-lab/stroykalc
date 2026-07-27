@@ -50,7 +50,7 @@ export default function DocumentsModal({ project, onClose }) {
 
       if (!html) { showToast(t('docNotAvailableOffline'), 'warning'); return }
 
-      openPDFViewer(html)
+      openPDFViewer(html, { name: doc.name, type: doc.type })
     } catch (e) {
       console.error('[openDoc]', e)
       showToast(t('error'), 'error')
