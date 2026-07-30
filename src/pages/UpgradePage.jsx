@@ -72,6 +72,17 @@ export default function UpgradePage() {
 
   const isPro = profile?.plan === 'pro'
 
+  // Calculate trial days remaining
+  const trialDaysLeft = (() => {
+    if (!profile?.stripe_trial_end) return null
+    const end  = new Date(profile.stripe_trial_end)
+    const now  = new Date()
+    if (end <= now) return 0
+    return Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+  })()
+
+  const isTrialing = profile?.stripe_sub_status === 'trialing' && trialDaysLeft > 0
+
   if (isPro) {
     return (
       <div className="flex-1 overflow-y-auto thin-scroll p-4 max-w-xl mx-auto w-full">
@@ -79,6 +90,13 @@ export default function UpgradePage() {
           <div className="text-6xl mb-4">🌟</div>
           <h2 className="text-2xl font-black text-slate-800 mb-2">{t('youArePro')}</h2>
           <p className="text-slate-500 text-sm mb-6">{t('proDesc')}</p>
+
+          {isTrialing && (
+            <div className="mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
+              ⏳ Пробен период — остават <strong>{trialDaysLeft} {trialDaysLeft === 1 ? 'ден' : 'дни'}</strong>
+            </div>
+          )}
+
           <div className="inline-block px-6 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-violet-700 text-white font-bold text-sm mb-8">
             {t('proActive')}
           </div>
