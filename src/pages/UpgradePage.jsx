@@ -75,13 +75,26 @@ export default function UpgradePage() {
   // Calculate trial days remaining
   const trialDaysLeft = (() => {
     if (!profile?.stripe_trial_end) return null
-    const end  = new Date(profile.stripe_trial_end)
-    const now  = new Date()
+    const end = new Date(profile.stripe_trial_end)
+    const now = new Date()
     if (end <= now) return 0
     return Math.ceil((end - now) / (1000 * 60 * 60 * 24))
   })()
 
   const isTrialing = profile?.stripe_sub_status === 'trialing' && trialDaysLeft > 0
+
+  // Next payment date + days remaining
+  const nextPayment = (() => {
+    if (!profile?.stripe_current_period_end) return null
+    return new Date(profile.stripe_current_period_end)
+  })()
+
+  const daysUntilPayment = (() => {
+    if (!nextPayment) return null
+    const diff = nextPayment - new Date()
+    if (diff <= 0) return 0
+    return Math.ceil(diff / (1000 * 60 * 60 * 24))
+  })()
 
   if (isPro) {
     return (
@@ -94,6 +107,18 @@ export default function UpgradePage() {
           {isTrialing && (
             <div className="mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
               ⏳ Пробен период — остават <strong>{trialDaysLeft} {trialDaysLeft === 1 ? 'ден' : 'дни'}</strong>
+              {nextPayment && (
+                <div className="text-xs font-normal mt-1 text-amber-600">
+                  Първо плащане: {nextPayment.toLocaleDateString('bg-BG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isTrialing && nextPayment && (
+            <div className="mb-4 px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm">
+              💳 Следващо плащане: <strong>{nextPayment.toLocaleDateString('bg-BG', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
+              <span className="text-indigo-500 text-xs ml-1">({daysUntilPayment} {daysUntilPayment === 1 ? 'ден' : 'дни'})</span>
             </div>
           )}
 

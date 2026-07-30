@@ -46,13 +46,21 @@ export default async function handler(req, res) {
         subStatus = sub.status
       }
 
+      const periodEnd = sub?.current_period_end
+        ? new Date(sub.current_period_end * 1000).toISOString()
+        : null
+
+      const billingInterval = sub?.items?.data?.[0]?.plan?.interval || 'month'
+
       const { error } = await supabase
         .from('profiles')
         .update({
-          plan:               'pro',
-          stripe_customer_id: session.customer,
-          stripe_trial_end:   trialEnd,
-          stripe_sub_status:  subStatus,
+          plan:                      'pro',
+          stripe_customer_id:        session.customer,
+          stripe_trial_end:          trialEnd,
+          stripe_sub_status:         subStatus,
+          stripe_current_period_end: periodEnd,
+          stripe_billing_interval:   billingInterval,
           ...(trialEnd ? { trial_used: true } : {}),
         })
         .eq('id', userId)
@@ -74,8 +82,21 @@ export default async function handler(req, res) {
     // For subscription events check status
     if (event.type === 'customer.subscription.updated') {
       const status = obj.status
-      // Only downgrade on past_due, unpaid, or canceled
+      // If active/trialing — just update period_end
       if (!['past_due', 'unpaid', 'canceled'].includes(status)) {
+        const periodEnd = obj.current_period_end
+          ? new Date(obj.current_period_end * 1000).toISOString()
+          : null
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('stripe_customer_id', obj.customer)
+          .single()
+        if (prof && periodEnd) {
+          await supabase.from('profiles')
+            .update({ stripe_current_period_end: periodEnd, stripe_sub_status: status })
+            .eq('id', prof.id)
+        }
         return res.status(200).json({ received: true })
       }
     }
