@@ -190,15 +190,21 @@ export default function UpgradePage() {
           >
             {loading === 'now' ? t('redirecting') : t('upgradeNow')}
           </button>
-          <button
-            onClick={() => handleUpgrade(true)}
-            disabled={!!loading}
-            className="w-full py-3 rounded-xl font-semibold text-white/90 border border-white/40
-                       hover:bg-white/10 active:scale-[.98] transition-all text-sm
-                       disabled:opacity-70"
-          >
-            {loading === 'trial' ? t('redirecting') : t('trialBtn')}
-          </button>
+          {profile?.trial_used ? (
+            <div className="w-full py-3 rounded-xl text-white/50 border border-white/20 text-sm text-center">
+              🚫 Пробният период е вече използван
+            </div>
+          ) : (
+            <button
+              onClick={() => handleUpgrade(true)}
+              disabled={!!loading}
+              className="w-full py-3 rounded-xl font-semibold text-white/90 border border-white/40
+                         hover:bg-white/10 active:scale-[.98] transition-all text-sm
+                         disabled:opacity-70"
+            >
+              {loading === 'trial' ? t('redirecting') : t('trialBtn')}
+            </button>
+          )}
           {error && <p className="text-red-300 text-xs mt-2">{error}</p>}
           <p className="text-xs text-indigo-200 mt-3">{t('cancelAnytime')}</p>
         </div>

@@ -53,6 +53,7 @@ export default async function handler(req, res) {
           stripe_customer_id: session.customer,
           stripe_trial_end:   trialEnd,
           stripe_sub_status:  subStatus,
+          ...(trialEnd ? { trial_used: true } : {}),
         })
         .eq('id', userId)
 
