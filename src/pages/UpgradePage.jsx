@@ -234,6 +234,24 @@ export default function UpgradePage() {
           <p className="text-xs text-indigo-200 mt-3">{t('cancelAnytime')}</p>
         </div>
 
+        {/* Manage subscription for ex-subscribers */}
+        {profile?.stripe_customer_id && (
+          <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+            <h3 className="font-bold text-slate-700 text-sm mb-1">{t('manageSubscription')}</h3>
+            <p className="text-xs text-slate-400 mb-4">{t('manageSubDesc')}</p>
+            <button
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+              className="w-full py-3 rounded-xl font-semibold text-sm
+                         border border-slate-200 text-slate-600
+                         hover:bg-slate-50 active:scale-[.98] transition-all
+                         disabled:opacity-60"
+            >
+              {portalLoading ? t('loadingPortal') : t('manageSubscription')}
+            </button>
+          </div>
+        )}
+
         {/* Feature comparison */}
         <div className="grid grid-cols-2 gap-3">
           {/* Free */}
