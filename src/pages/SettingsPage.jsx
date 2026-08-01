@@ -199,6 +199,9 @@ export default function SettingsPage() {
           {saving ? t('savingChangesBtn') : saved ? t('savedChangesBtn') : t('saveChangesBtn')}
         </button>
 
+        {/* Push notifications */}
+        <PushNotifications user={user} />
+
         {/* Change password */}
         <ChangePassword user={user} />
 
@@ -463,6 +466,105 @@ function ChangePassword({ user }) {
           </div>
         </div>
       )}
+    </section>
+  )
+}
+
+const VAPID_PUBLIC_KEY = 'BHthsxiISbyOy7p1FepjOhmY8aLPdarwa7qe_PHdm4oQumOnietuX2tVLdIMuqNNRuFdgme6aIStIWEt8oV1xxo'
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)))
+}
+
+function PushNotifications({ user }) {
+  const [status,   setStatus]   = useState('idle') // idle | loading | enabled | denied | unsupported
+  const [msg,      setMsg]      = useState('')
+
+  useEffect(() => {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      setStatus('unsupported'); return
+    }
+    if (Notification.permission === 'granted') setStatus('enabled')
+    else if (Notification.permission === 'denied') setStatus('denied')
+  }, [])
+
+  async function handleEnable() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setStatus('unsupported'); return
+    }
+    setStatus('loading')
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') { setStatus('denied'); return }
+
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      })
+
+      await fetch('/api/save-push-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, subscription: sub.toJSON() }),
+      })
+
+      setStatus('enabled')
+      setMsg('Известията са включени!')
+    } catch (err) {
+      console.error('[push]', err)
+      setStatus('idle')
+      setMsg('Грешка: ' + err.message)
+    }
+  }
+
+  async function handleDisable() {
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      if (sub) await sub.unsubscribe()
+      setStatus('idle')
+      setMsg('Известията са изключени.')
+    } catch (err) {
+      setMsg('Грешка: ' + err.message)
+    }
+  }
+
+  return (
+    <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-bold text-slate-700">🔔 Push известия</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Просрочени задачи и плащания — всеки ден в 9:00</p>
+        </div>
+        {status === 'unsupported' && (
+          <span className="text-xs text-slate-400">Не се поддържа</span>
+        )}
+        {status === 'denied' && (
+          <span className="text-xs text-red-400">Блокирано от браузъра</span>
+        )}
+        {(status === 'idle' || status === 'loading') && (
+          <button
+            onClick={handleEnable}
+            disabled={status === 'loading'}
+            className="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 font-semibold hover:bg-indigo-100 transition-colors disabled:opacity-60"
+          >
+            {status === 'loading' ? '⏳...' : 'Включи'}
+          </button>
+        )}
+        {status === 'enabled' && (
+          <button
+            onClick={handleDisable}
+            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 font-semibold hover:bg-red-50 hover:text-red-500 transition-colors"
+          >
+            ✅ Включени
+          </button>
+        )}
+      </div>
+      {msg && <p className="text-xs text-slate-500 mt-2">{msg}</p>}
     </section>
   )
 }
