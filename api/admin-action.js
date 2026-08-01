@@ -76,6 +76,32 @@ export default async function handler(req, res) {
       })
     }
 
+    // ── Grant PRO manually ────────────────────────────────────
+    if (action === 'grant_pro') {
+      const { startDate, endDate } = req.body
+      if (!startDate || !endDate) return res.status(400).json({ error: 'Missing startDate or endDate' })
+      await supabase.from('profiles')
+        .update({
+          plan: 'pro',
+          stripe_sub_status: 'active',
+          stripe_current_period_end: new Date(endDate).toISOString(),
+        })
+        .eq('id', userId)
+      return res.json({ ok: true })
+    }
+
+    // ── Revoke PRO manually ───────────────────────────────────
+    if (action === 'revoke_pro') {
+      await supabase.from('profiles')
+        .update({
+          plan: 'free',
+          stripe_sub_status: null,
+          stripe_current_period_end: null,
+        })
+        .eq('id', userId)
+      return res.json({ ok: true })
+    }
+
     return res.status(400).json({ error: 'Unknown action' })
   } catch (err) {
     console.error('[admin-action]', err)

@@ -40,6 +40,46 @@ export default function AdminPage() {
   const [userData, setUserData]   = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
 
+  // Grant PRO modal
+  const [proModal,    setProModal]    = useState(null) // user object
+  const [proStart,    setProStart]    = useState('')
+  const [proEnd,      setProEnd]      = useState('')
+  const [proLoading,  setProLoading]  = useState(false)
+
+  async function grantPro() {
+    if (!proStart || !proEnd) return showToast('Избери дата от и до', 'error')
+    if (new Date(proEnd) <= new Date(proStart)) return showToast('Крайната дата трябва да е след началната', 'error')
+    setProLoading(true)
+    const res = await fetch('/api/admin-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-email': user.email },
+      body: JSON.stringify({ action: 'grant_pro', userId: proModal.id, startDate: proStart, endDate: proEnd }),
+    })
+    const data = await res.json()
+    setProLoading(false)
+    if (data.ok) {
+      showToast('✅ PRO активиран до ' + new Date(proEnd).toLocaleDateString('bg-BG'), 'success')
+      setProModal(null)
+      await loadUsers()
+    } else {
+      showToast('Грешка: ' + data.error, 'error')
+    }
+  }
+
+  async function revokePro(u) {
+    if (!confirm(`Махни PRO от ${u.email}?`)) return
+    setActionLoading(u.id + 'revoke_pro')
+    const res = await fetch('/api/admin-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-email': user.email },
+      body: JSON.stringify({ action: 'revoke_pro', userId: u.id }),
+    })
+    const data = await res.json()
+    setActionLoading(null)
+    if (data.ok) { showToast('PRO премахнат', 'success'); await loadUsers() }
+    else showToast('Грешка: ' + data.error, 'error')
+  }
+
   // Support tickets
   const [tickets,       setTickets]       = useState([])
   const [ticketsTab,    setTicketsTab]    = useState('all')
@@ -240,6 +280,21 @@ export default function AdminPage() {
                           className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition-colors">
                           {t('adminViewData')}
                         </button>
+                        {/* PRO controls */}
+                        {u.plan !== 'pro' ? (
+                          <button
+                            onClick={() => { setProModal(u); setProStart(''); setProEnd('') }}
+                            className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors">
+                            ⚡ Grant PRO
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => revokePro(u)}
+                            disabled={actionLoading === u.id + 'revoke_pro'}
+                            className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors disabled:opacity-50">
+                            ⚡ Revoke PRO
+                          </button>
+                        )}
                         {(u.account_status || 'active') === 'active' && (
                           <button onClick={() => adminAction('suspend', u.id)}
                             disabled={actionLoading === u.id + 'suspend'}
@@ -364,6 +419,58 @@ export default function AdminPage() {
         </div>
 
       </div>
+
+      {/* ── Grant PRO modal ── */}
+      {proModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setProModal(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm">⚡ Grant PRO</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{proModal.email}</p>
+              </div>
+              <button onClick={() => setProModal(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">От дата</label>
+                <input
+                  type="date"
+                  value={proStart}
+                  onChange={e => setProStart(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">До дата</label>
+                <input
+                  type="date"
+                  value={proEnd}
+                  onChange={e => setProEnd(e.target.value)}
+                  min={proStart || undefined}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300"
+                />
+              </div>
+              {proStart && proEnd && (
+                <div className="bg-violet-50 border border-violet-100 rounded-xl px-3 py-2 text-xs text-violet-700">
+                  PRO от <strong>{new Date(proStart).toLocaleDateString('bg-BG')}</strong> до <strong>{new Date(proEnd).toLocaleDateString('bg-BG')}</strong>
+                  {' '}({Math.ceil((new Date(proEnd) - new Date(proStart)) / 86400000)} дни)
+                </div>
+              )}
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setProModal(null)}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
+                  Отказ
+                </button>
+                <button onClick={grantPro} disabled={proLoading || !proStart || !proEnd}
+                  className="flex-1 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 transition-all disabled:opacity-40">
+                  {proLoading ? 'Запазване...' : '⚡ Активирай PRO'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User data modal */}
       {viewUser && (
