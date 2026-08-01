@@ -41,16 +41,16 @@ export default function SettingsPage() {
         offer_footer:  profile.offer_footer  || t('offerFooterDefault'),
         default_vat:   profile.default_vat   || false,
         reminder_days: profile.reminder_days ?? 7,
+        // Public profile
+        public_enabled:    profile.public_enabled    ?? false,
+        public_slug:       profile.public_slug       || '',
+        public_bio:        profile.public_bio        || '',
+        public_services:   profile.public_services   || [],
+        public_website:    profile.public_website    || '',
+        public_show_phone: profile.public_show_phone ?? true,
+        public_show_email: profile.public_show_email ?? false,
       })
       if (profile.logo_url) setLogoPreview(profile.logo_url)
-      // Public profile fields
-      if (profile.public_enabled    !== undefined) setForm(f => ({ ...f, public_enabled:    profile.public_enabled }))
-      if (profile.public_slug)                     setForm(f => ({ ...f, public_slug:        profile.public_slug }))
-      if (profile.public_bio)                      setForm(f => ({ ...f, public_bio:         profile.public_bio }))
-      if (profile.public_services)                 setForm(f => ({ ...f, public_services:    profile.public_services }))
-      if (profile.public_website)                  setForm(f => ({ ...f, public_website:     profile.public_website }))
-      if (profile.public_show_phone !== undefined) setForm(f => ({ ...f, public_show_phone:  profile.public_show_phone }))
-      if (profile.public_show_email !== undefined) setForm(f => ({ ...f, public_show_email:  profile.public_show_email }))
     }
   }, [profile])
 
@@ -303,7 +303,7 @@ export default function SettingsPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Услуги</label>
                 <div className="flex flex-wrap gap-2 mb-2">
-                  {form.public_services.map(s => (
+                  {(form.public_services || []).map(s => (
                     <span key={s} className="flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-semibold border border-indigo-100">
                       {s}
                       <button onClick={() => removeService(s)} className="text-indigo-300 hover:text-red-400 ml-0.5 text-base leading-none">×</button>
