@@ -55,8 +55,24 @@ export default function AuthPage() {
       setError(t('errAgreeTerms')); return
     }
 
-    if (!isLogin && isDisposableEmail(email)) {
-      setError('Временните имейли не са позволени. Моля използвайте реален имейл адрес.'); return
+    if (!isLogin) {
+      setLoading(true)
+      try {
+        const r = await fetch('/api/check-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        })
+        const data = await r.json()
+        if (data.blocked) {
+          setError('Временните имейли не са позволени. Моля използвайте реален имейл адрес.')
+          setLoading(false)
+          return
+        }
+      } catch {
+        // ако API-то не отговори — продължаваме с регистрацията
+      }
+      setLoading(false)
     }
 
     setLoading(true)
@@ -334,30 +350,6 @@ function Screen({ children, lang, setLang }) {
       </div>
     </div>
   )
-}
-
-const BLOCKED_DOMAINS = new Set([
-  'mailinator.com','guerrillamail.com','guerrillamail.net','guerrillamail.org',
-  'tempmail.com','temp-mail.org','throwam.com','throwaway.email',
-  'yopmail.com','yopmail.fr','cool.fr.nf','jetable.fr.nf','nospam.ze.tc',
-  'nomail.xl.cx','mega.zik.dj','speed.1s.fr','courriel.fr.nf',
-  'dispostable.com','sharklasers.com','guerrillamailblock.com',
-  'grr.la','guerrillamail.info','spam4.me','trashmail.com',
-  'trashmail.me','trashmail.net','trashmail.at','trashmail.io',
-  'trashmail.org','discard.email','spamgourmet.com','spamgourmet.net',
-  'mailnull.com','maildrop.cc','mailnesia.com','mailnull.com',
-  'spamhereplease.com','spamspot.com','spamthisplease.com',
-  'fakeinbox.com','filzmail.com','getnada.com','tempinbox.com',
-  'tempr.email','mytemp.email','mohmal.com','10minutemail.com',
-  '10minutemail.net','10minemail.com','minuteinbox.com',
-  'tempail.com','tempemail.net','throwam.com','anonaddy.com',
-  'spamex.com','mailexpire.com','deadaddress.com','spamfree24.org',
-  'wegwerfmail.de','wegwerfmail.net','wegwerfmail.org',
-])
-
-function isDisposableEmail(email) {
-  const domain = email.split('@')[1]?.toLowerCase()
-  return domain ? BLOCKED_DOMAINS.has(domain) : false
 }
 
 function translateError(msg, t) {
