@@ -36,10 +36,10 @@ export default function UpgradePage() {
     setLoading(trial ? 'trial' : 'now')
     setError('')
     try {
-      const res = await fetch('/api/create-checkout-session', {
+      const res = await fetch('/api/stripe', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ userId: user.id, userEmail: user.email, trial, billing }),
+        body:    JSON.stringify({ action: 'checkout', userId: user.id, userEmail: user.email, trial, billing }),
       })
       const data = await res.json()
       if (data.url) {
@@ -57,10 +57,10 @@ export default function UpgradePage() {
   async function handleManageSubscription() {
     setPortalLoading(true)
     try {
-      const res  = await fetch('/api/customer-portal', {
+      const res  = await fetch('/api/stripe', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ userId: user.id }),
+        body:    JSON.stringify({ action: 'portal', userId: user.id }),
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url
