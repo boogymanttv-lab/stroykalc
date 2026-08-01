@@ -57,10 +57,17 @@ export default function SettingsPage() {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   function makeSlug(name) {
+    const map = {
+      а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ж:'zh',з:'z',и:'i',й:'y',
+      к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',
+      ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sht',ъ:'a',ь:'',ю:'yu',я:'ya',
+    }
     return (name || '').toLowerCase()
+      .split('').map(c => map[c] ?? c).join('')
       .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9\-а-яё]/gi, '')
+      .replace(/[^a-z0-9\-]/g, '')
       .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
       .slice(0, 40)
   }
 
@@ -262,7 +269,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={form.public_slug}
-                    onChange={e => set('public_slug', e.target.value.toLowerCase().replace(/[^a-z0-9\-]/g, ''))}
+                    onChange={e => set('public_slug', makeSlug(e.target.value))}
                     placeholder="ime-na-firmata"
                     className="flex-1 px-3 py-2.5 text-sm outline-none bg-white"
                   />
