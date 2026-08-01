@@ -19,6 +19,7 @@ import PDFViewer from './components/PDFViewer'
 import PWABanners from './components/PWABanners'
 import { syncDown } from './lib/syncService'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import PublicProfilePage from './pages/PublicProfilePage'
 
 const ADMIN_EMAIL = 'wellecfx@gmail.com'
 
@@ -90,6 +91,12 @@ function AppInner() {
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
   if (hash.startsWith('#share/')) {
     return <SharePage token={hash.slice('#share/'.length)} />
+  }
+
+  // ── Public company profile route ──
+  if (hash.startsWith('#f/')) {
+    const slug = hash.slice('#f/'.length).split('?')[0]
+    if (slug) return <PublicProfilePage slug={slug} />
   }
 
   // ── Password recovery route ──

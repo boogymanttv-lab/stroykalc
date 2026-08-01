@@ -12,7 +12,16 @@ export default function SettingsPage() {
     offer_footer: '',
     default_vat: false,
     reminder_days: 7,
+    // Public profile
+    public_enabled:    false,
+    public_slug:       '',
+    public_bio:        '',
+    public_services:   [],
+    public_website:    '',
+    public_show_phone: true,
+    public_show_email: false,
   })
+  const [newService, setNewService] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [logoFile, setLogoFile] = useState(null)
@@ -34,10 +43,44 @@ export default function SettingsPage() {
         reminder_days: profile.reminder_days ?? 7,
       })
       if (profile.logo_url) setLogoPreview(profile.logo_url)
+      // Public profile fields
+      if (profile.public_enabled    !== undefined) setForm(f => ({ ...f, public_enabled:    profile.public_enabled }))
+      if (profile.public_slug)                     setForm(f => ({ ...f, public_slug:        profile.public_slug }))
+      if (profile.public_bio)                      setForm(f => ({ ...f, public_bio:         profile.public_bio }))
+      if (profile.public_services)                 setForm(f => ({ ...f, public_services:    profile.public_services }))
+      if (profile.public_website)                  setForm(f => ({ ...f, public_website:     profile.public_website }))
+      if (profile.public_show_phone !== undefined) setForm(f => ({ ...f, public_show_phone:  profile.public_show_phone }))
+      if (profile.public_show_email !== undefined) setForm(f => ({ ...f, public_show_email:  profile.public_show_email }))
     }
   }, [profile])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  function makeSlug(name) {
+    return (name || '').toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\-а-яё]/gi, '')
+      .replace(/-+/g, '-')
+      .slice(0, 40)
+  }
+
+  function togglePublic(enabled) {
+    set('public_enabled', enabled)
+    if (enabled && !form.public_slug) {
+      set('public_slug', makeSlug(form.company_name || form.full_name))
+    }
+  }
+
+  function addService() {
+    const s = newService.trim()
+    if (!s || form.public_services.includes(s)) return
+    set('public_services', [...form.public_services, s])
+    setNewService('')
+  }
+
+  function removeService(s) {
+    set('public_services', form.public_services.filter(x => x !== s))
+  }
 
   async function handleSave() {
     setSaving(true)
@@ -188,6 +231,127 @@ export default function SettingsPage() {
               <p className="text-xs text-slate-400 mt-1">{t('reminderDaysDesc')}</p>
             </div>
           </div>
+        </section>
+
+        {/* ── Public profile ── */}
+        <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h2 className="font-bold text-slate-700">🌐 Публична страница</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Споделяй страницата си с клиенти</p>
+            </div>
+            <button
+              onClick={() => togglePublic(!form.public_enabled)}
+              className="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
+              style={{ background: form.public_enabled ? '#4f46e5' : '#e2e8f0' }}
+            >
+              <div
+                className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                style={{ transform: form.public_enabled ? 'translateX(21px)' : 'translateX(2px)' }}
+              />
+            </button>
+          </div>
+
+          {form.public_enabled && (
+            <div className="mt-4 space-y-4">
+              {/* Slug / URL */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">URL адрес</label>
+                <div className="flex items-center gap-1 border border-slate-200 rounded-xl overflow-hidden focus-within:border-indigo-400 transition-colors">
+                  <span className="px-3 py-2.5 text-xs text-slate-400 bg-slate-50 border-r border-slate-200 whitespace-nowrap">maistorix.com/#f/</span>
+                  <input
+                    type="text"
+                    value={form.public_slug}
+                    onChange={e => set('public_slug', e.target.value.toLowerCase().replace(/[^a-z0-9\-]/g, ''))}
+                    placeholder="ime-na-firmata"
+                    className="flex-1 px-3 py-2.5 text-sm outline-none bg-white"
+                  />
+                </div>
+                {form.public_slug && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <a
+                      href={`/#f/${form.public_slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-indigo-500 hover:underline"
+                    >
+                      👁 Виж страницата
+                    </a>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(`https://maistorix.com/#f/${form.public_slug}`) }}
+                      className="text-xs text-slate-400 hover:text-slate-600"
+                    >
+                      📋 Копирай линк
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Описание</label>
+                <textarea
+                  rows={3}
+                  value={form.public_bio}
+                  onChange={e => set('public_bio', e.target.value)}
+                  placeholder="Занимаваме се с ремонти и строителни услуги в София от 2010г. Качество и точност на всяка стъпка."
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-indigo-400 resize-none transition-colors"
+                />
+              </div>
+
+              {/* Services */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Услуги</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {form.public_services.map(s => (
+                    <span key={s} className="flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-semibold border border-indigo-100">
+                      {s}
+                      <button onClick={() => removeService(s)} className="text-indigo-300 hover:text-red-400 ml-0.5 text-base leading-none">×</button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newService}
+                    onChange={e => setNewService(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addService()}
+                    placeholder="Ремонт, Покривни работи..."
+                    className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-400 transition-colors"
+                  />
+                  <button onClick={addService}
+                    className="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-bold hover:bg-indigo-100 transition-colors">
+                    + Добави
+                  </button>
+                </div>
+              </div>
+
+              {/* Website */}
+              <Field label="Уебсайт" value={form.public_website} onChange={v => set('public_website', v)} placeholder="https://firmata.bg" />
+
+              {/* Visibility toggles */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                  <span className="text-sm text-slate-600">Показвай телефон</span>
+                  <button onClick={() => set('public_show_phone', !form.public_show_phone)}
+                    className="relative w-10 h-5 rounded-full transition-colors duration-200"
+                    style={{ background: form.public_show_phone ? '#4f46e5' : '#e2e8f0' }}>
+                    <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
+                      style={{ transform: form.public_show_phone ? 'translateX(21px)' : 'translateX(2px)' }} />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                  <span className="text-sm text-slate-600">Показвай имейл</span>
+                  <button onClick={() => set('public_show_email', !form.public_show_email)}
+                    className="relative w-10 h-5 rounded-full transition-colors duration-200"
+                    style={{ background: form.public_show_email ? '#4f46e5' : '#e2e8f0' }}>
+                    <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
+                      style={{ transform: form.public_show_email ? 'translateX(21px)' : 'translateX(2px)' }} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         <button
