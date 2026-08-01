@@ -16,6 +16,7 @@ import SupportPage from './pages/SupportPage'
 import OnboardingTour from './components/OnboardingTour'
 import Toaster from './components/Toaster'
 import PDFViewer from './components/PDFViewer'
+import PWABanners from './components/PWABanners'
 import { syncDown } from './lib/syncService'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 
@@ -367,6 +368,7 @@ function AppInner() {
     <CookieBanner />
     <Toaster />
     <PDFViewer />
+    <PWABanners />
     </>
   )
 }
