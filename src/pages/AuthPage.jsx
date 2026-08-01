@@ -62,7 +62,7 @@ export default function AuthPage() {
       if (err) setError(translateError(err.message, t))
     } else {
       const err = await signUp(email, password)
-      if (err) setError(translateError(err.message, t))
+      if (err) setError(translateError(err?.message || err?.error_description, t))
       else setDone(true)
     }
 
@@ -333,6 +333,7 @@ function Screen({ children, lang, setLang }) {
 }
 
 function translateError(msg, t) {
+  if (!msg || typeof msg !== 'string') return t('error') || 'Грешка при регистрация'
   if (msg.includes('Invalid login'))        return t('errInvalidLogin')
   if (msg.includes('already registered'))   return t('errAlreadyRegistered')
   if (msg.includes('Email not confirmed'))  return t('errEmailNotConfirmed')
