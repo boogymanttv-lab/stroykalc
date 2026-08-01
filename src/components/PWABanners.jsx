@@ -13,13 +13,20 @@ export default function PWABanners() {
   )
 
   useEffect(() => {
-    function handler(e) {
-      e.preventDefault()
-      setInstallPrompt(e)
-      if (!dismissed) setShowInstall(true)
+    // Check if already captured before React loaded
+    if (window.__pwaInstallPrompt && !dismissed) {
+      setInstallPrompt(window.__pwaInstallPrompt)
+      setShowInstall(true)
     }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+    // Also listen for future events
+    function onReady() {
+      if (window.__pwaInstallPrompt && !dismissed) {
+        setInstallPrompt(window.__pwaInstallPrompt)
+        setShowInstall(true)
+      }
+    }
+    window.addEventListener('pwaInstallReady', onReady)
+    return () => window.removeEventListener('pwaInstallReady', onReady)
   }, [dismissed])
 
   async function handleInstall() {
