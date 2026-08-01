@@ -79,6 +79,12 @@ function AppInner() {
     return p.get('type') === 'recovery'
   })
 
+  const [emailConfirmed, setEmailConfirmed] = useState(() => {
+    const h = window.location.hash
+    const p = new URLSearchParams(h.slice(1))
+    return p.get('type') === 'signup'
+  })
+
   // ── Share / Client portal route ──
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
   if (hash.startsWith('#share/')) {
@@ -88,6 +94,31 @@ function AppInner() {
   // ── Password recovery route ──
   if (isRecovery) {
     return <ResetPasswordPage onDone={() => setIsRecovery(false)} />
+  }
+
+  // ── Email confirmed route ──
+  if (emailConfirmed && !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 text-center">
+          <img src="/pwa-192.png" alt="Maistorix" className="w-16 h-16 rounded-2xl mb-3 mx-auto shadow-md" />
+          <div className="text-5xl mb-4">✅</div>
+          <h2 className="text-xl font-black text-slate-800 mb-2">Имейлът е потвърден!</h2>
+          <p className="text-slate-500 text-sm mb-6">Акаунтът ви е активиран успешно. Влезте, за да продължите.</p>
+          <button
+            onClick={() => {
+              window.history.replaceState({}, '', window.location.pathname)
+              setEmailConfirmed(false)
+            }}
+            className="w-full py-3 rounded-xl font-bold text-white text-sm
+                       bg-gradient-to-r from-indigo-600 to-violet-700
+                       hover:opacity-90 active:scale-[.98] transition-all"
+          >
+            → Вход в акаунта
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const [calcKey,       setCalcKey]       = useState(0)
