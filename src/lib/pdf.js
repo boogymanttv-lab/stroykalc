@@ -292,7 +292,7 @@ export async function generateOfferPDF({ profile, client, project, shareUrl, isP
   const offerName = project.offer_number
     ? `${lang === 'en' ? 'Offer' : 'Оферта'}-${project.offer_number}`
     : (lang === 'en' ? 'Offer' : 'Оферта')
-  openPDFViewer(html, { name: offerName, type: 'offer', shareUrl: shareUrl || null })
+  openPDFViewer(html, { name: offerName, type: 'offer', shareUrl: shareUrl || null, clientEmail: client?.email || null })
   return html
 }
 
