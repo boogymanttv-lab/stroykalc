@@ -40,6 +40,52 @@ export default function AdminPage() {
   const [userData, setUserData]   = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
 
+  // Bulk email
+  const [bulkSubject,  setBulkSubject]  = useState('')
+  const [bulkText,     setBulkText]     = useState('')
+  const [bulkGroup,    setBulkGroup]    = useState('all')
+  const [bulkLoading,  setBulkLoading]  = useState(false)
+  const [bulkResult,   setBulkResult]   = useState(null)
+
+  async function sendBulkEmail() {
+    if (!bulkSubject.trim() || !bulkText.trim()) return showToast('Попълни тема и текст', 'error')
+    if (!confirm(`Изпрати имейл до всички ${bulkGroup === 'all' ? 'потребители' : bulkGroup === 'pro' ? 'PRO потребители' : 'Free потребители'}?`)) return
+    setBulkLoading(true)
+    setBulkResult(null)
+    const res = await fetch('/api/send-bulk-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-email': user.email },
+      body: JSON.stringify({ subject: bulkSubject, html: buildEmailHtml(bulkText), targetGroup: bulkGroup }),
+    })
+    const data = await res.json()
+    setBulkLoading(false)
+    if (data.ok) {
+      setBulkResult(data)
+      showToast(`✅ Изпратено до ${data.sent} потребители`, 'success')
+      setBulkSubject(''); setBulkText('')
+    } else {
+      showToast('Грешка: ' + data.error, 'error')
+    }
+  }
+
+  function buildEmailHtml(text) {
+    const paragraphs = text.split('\n').filter(l => l.trim()).map(l => `<p style="margin:0 0 12px">${l}</p>`).join('')
+    return `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
+        <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:28px 32px">
+          <h1 style="color:#fff;margin:0;font-size:22px;font-weight:800">Maistorix</h1>
+          <p style="color:rgba(255,255,255,.7);margin:4px 0 0;font-size:13px">Управление на строителния бизнес</p>
+        </div>
+        <div style="padding:32px;color:#1e293b;font-size:15px;line-height:1.6">
+          ${paragraphs}
+        </div>
+        <div style="padding:20px 32px;border-top:1px solid #f1f5f9;text-align:center">
+          <a href="https://maistorix.com" style="display:inline-block;background:#4f46e5;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Отвори Maistorix</a>
+          <p style="color:#94a3b8;font-size:11px;margin:16px 0 0">© 2025 Maistorix · <a href="https://maistorix.com" style="color:#94a3b8">maistorix.com</a></p>
+        </div>
+      </div>`
+  }
+
   // Grant PRO modal
   const [proModal,    setProModal]    = useState(null) // user object
   const [proStart,    setProStart]    = useState('')
@@ -323,6 +369,70 @@ export default function AdminPage() {
           }
         </div>
         <p className="text-center text-xs text-slate-300">{filtered.length} {t('adminUsersShown')}</p>
+
+        {/* ── Bulk Email ── */}
+        <div className="mt-6 bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center gap-2">
+            <span className="text-base">📢</span>
+            <h3 className="font-bold text-slate-700 text-sm">Изпрати имейл до потребители</h3>
+          </div>
+          <div className="p-4 space-y-3">
+            {/* Target group */}
+            <div className="flex gap-2">
+              {[
+                { id: 'all',  label: '👥 Всички' },
+                { id: 'pro',  label: '⚡ PRO' },
+                { id: 'free', label: '🆓 Free' },
+              ].map(g => (
+                <button key={g.id} onClick={() => setBulkGroup(g.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors
+                    ${bulkGroup === g.id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Subject */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Тема</label>
+              <input
+                type="text"
+                value={bulkSubject}
+                onChange={e => setBulkSubject(e.target.value)}
+                placeholder="Примерно: 🎉 Специална промоция за абонати на Maistorix"
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            </div>
+
+            {/* Body */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Съдържание</label>
+              <textarea
+                rows={6}
+                value={bulkText}
+                onChange={e => setBulkText(e.target.value)}
+                placeholder={'Здравейте!\n\nПишем ви, за да ви уведомим...\n\nEкипът на Maistorix'}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none font-mono"
+              />
+              <p className="text-[11px] text-slate-300 mt-1">Всеки нов ред = нов параграф. Имейлът се изпраща с branded шаблон на Maistorix.</p>
+            </div>
+
+            {/* Result */}
+            {bulkResult && (
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 text-xs text-emerald-700">
+                ✅ Изпратено до <strong>{bulkResult.sent}</strong> потребители
+                {bulkResult.failed > 0 && <span className="text-red-500 ml-2">· {bulkResult.failed} неуспешни</span>}
+              </div>
+            )}
+
+            <button
+              onClick={sendBulkEmail}
+              disabled={bulkLoading || !bulkSubject.trim() || !bulkText.trim()}
+              className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90 transition-all disabled:opacity-40">
+              {bulkLoading ? 'Изпращане...' : '📤 Изпрати имейл'}
+            </button>
+          </div>
+        </div>
 
         {/* ── Support Tickets ── */}
         <div className="mt-6">
