@@ -199,6 +199,9 @@ export default function SettingsPage() {
           {saving ? t('savingChangesBtn') : saved ? t('savedChangesBtn') : t('saveChangesBtn')}
         </button>
 
+        {/* Install app */}
+        <InstallApp />
+
         {/* Push notifications */}
         <PushNotifications user={user} />
 
@@ -465,6 +468,76 @@ function ChangePassword({ user }) {
             </button>
           </div>
         </div>
+      )}
+    </section>
+  )
+}
+
+function InstallApp() {
+  const [prompt,    setPrompt]    = useState(null)
+  const [installed, setInstalled] = useState(false)
+  const [supported, setSupported] = useState(true)
+
+  useEffect(() => {
+    // Already installed?
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setInstalled(true); return
+    }
+    // Captured early in index.html?
+    if (window.__pwaInstallPrompt) {
+      setPrompt(window.__pwaInstallPrompt)
+    }
+    function onReady() {
+      if (window.__pwaInstallPrompt) setPrompt(window.__pwaInstallPrompt)
+    }
+    window.addEventListener('pwaInstallReady', onReady)
+    return () => window.removeEventListener('pwaInstallReady', onReady)
+  }, [])
+
+  async function handleInstall() {
+    if (!prompt) return
+    prompt.prompt()
+    const { outcome } = await prompt.userChoice
+    if (outcome === 'accepted') {
+      setInstalled(true)
+      window.__pwaInstallPrompt = null
+    }
+  }
+
+  if (installed) return (
+    <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="flex items-center gap-3">
+        <img src="/pwa-192.png" alt="Maistorix" className="w-10 h-10 rounded-xl shadow-sm" />
+        <div>
+          <h2 className="font-bold text-slate-700">📲 Приложението е инсталирано</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Можете да го отворите от началния екран</p>
+        </div>
+      </div>
+    </section>
+  )
+
+  return (
+    <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="flex items-center gap-3 mb-3">
+        <img src="/pwa-192.png" alt="Maistorix" className="w-10 h-10 rounded-xl shadow-sm" />
+        <div>
+          <h2 className="font-bold text-slate-700">📲 Инсталирай приложението</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Добави на началния екран за бърз достъп</p>
+        </div>
+      </div>
+      {prompt ? (
+        <button
+          onClick={handleInstall}
+          className="w-full py-2.5 rounded-xl text-sm font-bold text-white
+                     bg-gradient-to-r from-indigo-600 to-violet-700
+                     hover:opacity-90 active:scale-[.98] transition-all"
+        >
+          Инсталирай сега
+        </button>
+      ) : (
+        <p className="text-xs text-slate-400 bg-slate-50 rounded-xl px-4 py-3">
+          В браузъра натисни <strong>⋮ → Инсталирай приложение</strong> (Chrome/Edge) или <strong>Сподели → Добави към началния екран</strong> (Safari/iPhone)
+        </p>
       )}
     </section>
   )
