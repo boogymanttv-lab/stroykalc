@@ -87,47 +87,19 @@ export default function OnboardingTour({ onDone }) {
   const s = STEPS[step]
   const isCenter = s.position === 'center' || !rect
 
-  const TOOLTIP_HEIGHT = 220
-  const TOOLTIP_WIDTH  = 260
-  const pad = 16
+  const TOOLTIP_WIDTH = Math.min(320, window.innerWidth - 32)
 
-  // Tooltip position — clamp to viewport
-  const getTooltipStyle = () => {
-    if (isCenter) return {
-      position: 'fixed',
-      top: '50%', left: '50%',
-      transform: 'translate(-50%, -50%)',
-      zIndex: 10001,
-    }
-    const isMobile = window.innerWidth < 768
-    if (isMobile) {
-      const top = rect.top + rect.height + pad
-      const fitsBelow = top + TOOLTIP_HEIGHT < window.innerHeight
-      return {
-        position: 'fixed',
-        top: fitsBelow ? top : rect.top - TOOLTIP_HEIGHT - pad,
-        left: Math.max(pad, Math.min(rect.left, window.innerWidth - TOOLTIP_WIDTH - pad)),
-        zIndex: 10001,
-      }
-    }
-    // Desktop: right of element, clamped vertically
-    const rawTop = rect.top + rect.height / 2 - 60
-    const clampedTop = Math.max(pad, Math.min(rawTop, window.innerHeight - TOOLTIP_HEIGHT - pad))
-    return {
-      position: 'fixed',
-      top: clampedTop,
-      left: rect.left + rect.width + pad,
-      zIndex: 10001,
-    }
+  // Always centered on all devices
+  const tooltipStyle = {
+    position: 'fixed',
+    top: '50%', left: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 10001,
   }
 
-  const tooltipStyle = getTooltipStyle()
-  const isMobile = window.innerWidth < 768
-  // Arrow flips if tooltip moved above target
-  const showArrowTop = !isCenter && isMobile && rect &&
-    (rect.top + rect.height + pad + TOOLTIP_HEIGHT < window.innerHeight)
-  const showArrowBottom = !isCenter && isMobile && rect && !showArrowTop
-  const showArrowLeft = !isCenter && !isMobile && rect
+  const showArrowTop    = false
+  const showArrowBottom = false
+  const showArrowLeft   = false
 
   return (
     <>
