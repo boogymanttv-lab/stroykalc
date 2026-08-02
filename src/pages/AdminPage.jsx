@@ -52,10 +52,10 @@ export default function AdminPage() {
     if (!confirm(`Изпрати имейл до всички ${bulkGroup === 'all' ? 'потребители' : bulkGroup === 'pro' ? 'PRO потребители' : 'Free потребители'}?`)) return
     setBulkLoading(true)
     setBulkResult(null)
-    const res = await fetch('/api/send-bulk-email', {
+    const res = await fetch('/api/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-email': user.email },
-      body: JSON.stringify({ subject: bulkSubject, html: buildEmailHtml(bulkText), targetGroup: bulkGroup }),
+      body: JSON.stringify({ action: 'bulk', subject: bulkSubject, html: buildEmailHtml(bulkText), targetGroup: bulkGroup }),
     })
     const data = await res.json()
     setBulkLoading(false)

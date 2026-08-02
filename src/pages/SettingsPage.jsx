@@ -750,10 +750,10 @@ function PushNotifications({ user }) {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       })
 
-      await fetch('/api/save-push-subscription', {
+      await fetch('/api/push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, subscription: sub.toJSON() }),
+        body: JSON.stringify({ action: 'subscribe', userId: user.id, subscription: sub.toJSON() }),
       })
 
       setStatus('enabled')

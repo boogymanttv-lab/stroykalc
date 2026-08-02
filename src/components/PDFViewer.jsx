@@ -103,10 +103,11 @@ export default function PDFViewer() {
       const iframeDoc = iframeRef.current?.contentDocument
       const offerHtml = iframeDoc ? iframeDoc.body?.innerHTML || '' : ''
 
-      const res = await fetch('/api/send-offer', {
+      const res = await fetch('/api/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action:     'offer',
           to:         emailTo,
           senderName,
           offerName:  meta.name || 'Оферта',
