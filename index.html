@@ -126,160 +126,143 @@
     <!-- ── SEO Landing Shell (скрива се когато React се зареди) ─────── -->
     <div id="seo-shell">
       <style>
-        #seo-shell{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1e293b;background:#fff;position:fixed;inset:0;z-index:9999;overflow-y:auto}
-        #seo-shell *{box-sizing:border-box;margin:0;padding:0}
-        .lp-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid #e2e8f0;background:#fff;position:sticky;top:0;z-index:10}
-        .lp-logo{font-size:20px;font-weight:700;color:#1e293b}.lp-logo span{color:#4f46e5}
-        .lp-nav-links{display:flex;gap:20px;align-items:center}
-        .lp-nav-links a{font-size:14px;color:#64748b;text-decoration:none}
-        .lp-btn-primary{background:#4f46e5;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
-        .lp-btn-secondary{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block}
-        .lp-hero{text-align:center;padding:64px 24px 48px;background:linear-gradient(180deg,#f8f7ff 0%,#fff 100%)}
-        .lp-badge{display:inline-block;background:#ede9fe;color:#4f46e5;font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;margin-bottom:20px}
-        .lp-hero h1{font-size:clamp(28px,5vw,42px);font-weight:800;color:#1e293b;line-height:1.2;margin-bottom:18px;max-width:600px;margin-left:auto;margin-right:auto}
-        .lp-hero h1 span{color:#4f46e5}
-        .lp-hero p{font-size:16px;color:#475569;max-width:500px;margin:0 auto 32px;line-height:1.7}
-        .lp-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
-        .lp-note{font-size:12px;color:#94a3b8}
-        .lp-stats{display:flex;justify-content:center;gap:32px;padding:32px 24px;background:#fff;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;flex-wrap:wrap}
-        .lp-stat-num{font-size:28px;font-weight:800;color:#4f46e5}
-        .lp-stat-label{font-size:13px;color:#64748b;margin-top:2px}
-        .lp-features{padding:56px 24px;background:#f8fafc}
-        .lp-section-title{text-align:center;font-size:26px;font-weight:700;color:#1e293b;margin-bottom:8px}
-        .lp-section-sub{text-align:center;font-size:15px;color:#64748b;margin-bottom:40px}
-        .lp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;max-width:900px;margin:0 auto}
-        .lp-feat{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px}
-        .lp-feat-icon{font-size:28px;margin-bottom:12px}
-        .lp-feat h3{font-size:16px;font-weight:700;color:#1e293b;margin-bottom:8px}
-        .lp-feat p{font-size:14px;color:#64748b;line-height:1.6}
-        .lp-how{padding:56px 24px;background:#fff}
-        .lp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;max-width:800px;margin:0 auto}
-        .lp-step{text-align:center}
-        .lp-step-num{width:40px;height:40px;background:#4f46e5;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;margin:0 auto 14px}
-        .lp-step h3{font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px}
-        .lp-step p{font-size:13px;color:#64748b;line-height:1.6}
-        .lp-pricing{padding:56px 24px;background:#f8fafc}
-        .lp-plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;max-width:600px;margin:0 auto}
-        .lp-plan{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:28px}
-        .lp-plan.lp-pro{border:2px solid #4f46e5;position:relative}
-        .lp-pro-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#4f46e5;color:#fff;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
-        .lp-plan-name{font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px}
-        .lp-plan-price{font-size:32px;font-weight:800;color:#1e293b;margin-bottom:4px}
-        .lp-plan-price span{font-size:14px;color:#64748b;font-weight:400}
-        .lp-plan-items{margin-top:20px;display:flex;flex-direction:column;gap:10px}
-        .lp-plan-item{font-size:14px;color:#475569;display:flex;gap:8px;align-items:flex-start}
-        .lp-check{color:#4f46e5;font-weight:700;flex-shrink:0}
-        .lp-faq{padding:56px 24px;background:#fff}
-        .lp-faq-list{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-        .lp-faq-item{border:1px solid #e2e8f0;border-radius:12px;padding:20px 24px}
-        .lp-faq-q{font-size:15px;font-weight:600;color:#1e293b;margin-bottom:8px}
-        .lp-faq-a{font-size:14px;color:#64748b;line-height:1.6}
-        .lp-cta{padding:64px 24px;text-align:center;background:linear-gradient(135deg,#4f46e5,#7c3aed)}
-        .lp-cta h2{font-size:28px;font-weight:800;color:#fff;margin-bottom:12px}
-        .lp-cta p{font-size:15px;color:rgba(255,255,255,0.8);margin-bottom:28px}
-        .lp-btn-white{background:#fff;color:#4f46e5;border:none;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
-        .lp-footer{padding:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:gap;background:#1e293b;gap:12px;flex-wrap:wrap}
-        .lp-footer-logo{font-size:16px;font-weight:700;color:#fff}.lp-footer-logo span{color:#818cf8}
-        .lp-footer-links{display:flex;gap:16px}
+        #seo-shell{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1e293b;background:#fff;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;overflow-y:auto;overflow-x:hidden}
+        #seo-shell *{box-sizing:border-box}
+        #seo-shell h1,#seo-shell h2,#seo-shell h3,#seo-shell p,#seo-shell div,#seo-shell nav,#seo-shell section,#seo-shell footer{margin:0;padding:0}
+        .lp-wrap{width:100%;max-width:100%}
+        .lp-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid #e2e8f0;background:#fff;position:sticky;top:0;z-index:100;width:100%}
+        .lp-logo{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-0.5px}
+        .lp-logo span{color:#4f46e5}
+        .lp-nav-links{display:flex;gap:24px;align-items:center}
+        .lp-nav-links a{font-size:14px;color:#64748b;text-decoration:none;font-weight:500}
+        .lp-btn-nav{background:#4f46e5;color:#fff !important;padding:9px 20px;border-radius:10px;font-size:14px;font-weight:600 !important;text-decoration:none}
+        .lp-hero{text-align:center;padding:72px 40px 56px;background:#faf9ff;width:100%}
+        .lp-badge{display:inline-block;background:#ede9fe;color:#4f46e5;font-size:12px;font-weight:600;padding:5px 16px;border-radius:20px;margin-bottom:24px}
+        .lp-hero h1{font-size:44px;font-weight:800;color:#1e293b;line-height:1.2;margin-bottom:20px;max-width:620px;margin-left:auto;margin-right:auto}
+        .lp-hero h1 em{color:#4f46e5;font-style:normal}
+        .lp-hero-p{font-size:17px;color:#475569;max-width:520px;margin:0 auto 36px;line-height:1.7}
+        .lp-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+        .lp-btn-p{background:#4f46e5;color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+        .lp-btn-s{background:#fff;color:#334155;border:1px solid #e2e8f0;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block}
+        .lp-note{font-size:13px;color:#94a3b8}
+        .lp-stats{display:flex;justify-content:center;gap:0;background:#fff;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;width:100%}
+        .lp-stat{text-align:center;padding:28px 40px;border-right:1px solid #e2e8f0;flex:1}
+        .lp-stat:last-child{border-right:none}
+        .lp-stat-num{font-size:30px;font-weight:800;color:#4f46e5;display:block;margin-bottom:4px}
+        .lp-stat-label{font-size:13px;color:#64748b}
+        .lp-section{padding:64px 40px;width:100%}
+        .lp-section-alt{background:#f8fafc}
+        .lp-section-title{text-align:center;font-size:28px;font-weight:800;color:#1e293b;margin-bottom:10px}
+        .lp-section-sub{text-align:center;font-size:15px;color:#64748b;margin-bottom:44px}
+        .lp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:0 auto}
+        .lp-feat{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px}
+        .lp-feat-icon{font-size:32px;margin-bottom:14px;display:block}
+        .lp-feat h3{font-size:16px;font-weight:700;color:#1e293b;margin-bottom:10px}
+        .lp-feat p{font-size:14px;color:#64748b;line-height:1.65}
+        .lp-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;max-width:800px;margin:0 auto}
+        .lp-step{text-align:center;padding:0 12px}
+        .lp-step-num{width:48px;height:48px;background:#4f46e5;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;margin:0 auto 16px}
+        .lp-step h3{font-size:16px;font-weight:700;color:#1e293b;margin-bottom:8px}
+        .lp-step p{font-size:14px;color:#64748b;line-height:1.6}
+        .lp-plans{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:640px;margin:0 auto}
+        .lp-plan{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:32px}
+        .lp-plan-pro{border:2px solid #4f46e5;position:relative}
+        .lp-pro-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#4f46e5;color:#fff;font-size:12px;font-weight:700;padding:5px 16px;border-radius:20px;white-space:nowrap}
+        .lp-plan-name{font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px}
+        .lp-plan-price{font-size:36px;font-weight:800;color:#1e293b;margin-bottom:6px}
+        .lp-plan-price span{font-size:15px;color:#64748b;font-weight:400}
+        .lp-plan-items{margin-top:24px;display:flex;flex-direction:column;gap:12px}
+        .lp-plan-item{font-size:14px;color:#475569;display:flex;gap:10px;align-items:flex-start;line-height:1.5}
+        .lp-check{color:#4f46e5;font-weight:800;flex-shrink:0;margin-top:1px}
+        .lp-faq-list{max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+        .lp-faq-item{border:1px solid #e2e8f0;border-radius:14px;padding:22px 28px}
+        .lp-faq-q{font-size:15px;font-weight:700;color:#1e293b;margin-bottom:10px}
+        .lp-faq-a{font-size:14px;color:#64748b;line-height:1.65}
+        .lp-cta{padding:72px 40px;text-align:center;background:#4f46e5;width:100%}
+        .lp-cta h2{font-size:32px;font-weight:800;color:#fff;margin-bottom:14px}
+        .lp-cta p{font-size:16px;color:rgba(255,255,255,0.82);margin-bottom:32px}
+        .lp-btn-w{background:#fff;color:#4f46e5;border:none;padding:16px 36px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+        .lp-footer{padding:28px 40px;display:flex;justify-content:space-between;align-items:center;background:#1e293b;gap:16px;flex-wrap:wrap;width:100%}
+        .lp-footer-logo{font-size:18px;font-weight:800;color:#fff}
+        .lp-footer-logo span{color:#818cf8}
+        .lp-footer-links{display:flex;gap:20px}
         .lp-footer-links a{font-size:13px;color:#94a3b8;text-decoration:none}
-        .lp-footer-copy{font-size:12px;color:#64748b}
-        @media(max-width:600px){.lp-nav-links{display:none}.lp-stats{gap:20px}}
+        .lp-footer-copy{font-size:12px;color:#475569}
+        @media(max-width:768px){
+          .lp-nav{padding:14px 20px}
+          .lp-nav-links .lp-nav-txt{display:none}
+          .lp-hero{padding:48px 20px 40px}
+          .lp-hero h1{font-size:28px}
+          .lp-stats{flex-wrap:wrap}
+          .lp-stat{min-width:50%;border-right:none;border-bottom:1px solid #e2e8f0;padding:20px}
+          .lp-section{padding:44px 20px}
+          .lp-grid{grid-template-columns:1fr}
+          .lp-steps{grid-template-columns:1fr}
+          .lp-plans{grid-template-columns:1fr}
+          .lp-footer{padding:20px;flex-direction:column;text-align:center}
+        }
       </style>
+
+      <div class="lp-wrap">
 
       <!-- Навигация -->
       <nav class="lp-nav">
         <div class="lp-logo"><span>M</span>aistorix</div>
         <div class="lp-nav-links">
-          <a href="#features">Функции</a>
-          <a href="#pricing">Цени</a>
-          <a href="#faq">Въпроси</a>
-          <a href="/" class="lp-btn-primary" onclick="document.getElementById('seo-shell').style.display='none'">Влез в приложението</a>
+          <a href="#lp-features" class="lp-nav-txt">Функции</a>
+          <a href="#lp-pricing" class="lp-nav-txt">Цени</a>
+          <a href="#lp-faq" class="lp-nav-txt">Въпроси</a>
+          <a href="/" class="lp-btn-nav" onclick="document.getElementById('seo-shell').style.display='none';return false;">Влез в приложението</a>
         </div>
       </nav>
 
       <!-- Hero -->
       <section class="lp-hero">
         <div class="lp-badge">За майстори и строителни фирми в България</div>
-        <h1>Управлявай <span>строителния</span> си бизнес от телефона</h1>
-        <p>Оферти, проекти, клиенти и плащания — всичко на едно място. Спести часове работа всяка седмица.</p>
+        <h1>Управлявай <em>строителния</em> си бизнес от телефона</h1>
+        <p class="lp-hero-p">Оферти, проекти, клиенти и плащания — всичко на едно място. Спести часове работа всяка седмица.</p>
         <div class="lp-btns">
-          <a href="/" class="lp-btn-primary" onclick="document.getElementById('seo-shell').style.display='none'">Пробвай безплатно</a>
-          <a href="#features" class="lp-btn-secondary">Виж функциите</a>
+          <a href="/" class="lp-btn-p" onclick="document.getElementById('seo-shell').style.display='none';return false;">Пробвай безплатно</a>
+          <a href="#lp-features" class="lp-btn-s">Виж функциите</a>
         </div>
         <p class="lp-note">Без кредитна карта. Безплатен план без ограничение.</p>
       </section>
 
       <!-- Stats -->
       <div class="lp-stats">
-        <div style="text-align:center"><div class="lp-stat-num">300+</div><div class="lp-stat-label">строителни услуги в калкулатора</div></div>
-        <div style="text-align:center"><div class="lp-stat-num">€0</div><div class="lp-stat-label">за да започнеш</div></div>
-        <div style="text-align:center"><div class="lp-stat-num">€2.99</div><div class="lp-stat-label">PRO план / месец</div></div>
-        <div style="text-align:center"><div class="lp-stat-num">📱</div><div class="lp-stat-label">работи на телефон и компютър</div></div>
+        <div class="lp-stat"><span class="lp-stat-num">300+</span><span class="lp-stat-label">строителни услуги в калкулатора</span></div>
+        <div class="lp-stat"><span class="lp-stat-num">€0</span><span class="lp-stat-label">за да започнеш</span></div>
+        <div class="lp-stat"><span class="lp-stat-num">€2.99</span><span class="lp-stat-label">PRO план на месец</span></div>
+        <div class="lp-stat"><span class="lp-stat-num">iOS+Android</span><span class="lp-stat-label">работи на телефон и компютър</span></div>
       </div>
 
       <!-- Функции -->
-      <section class="lp-features" id="features">
+      <section class="lp-section lp-section-alt" id="lp-features">
         <h2 class="lp-section-title">Всичко което ти трябва</h2>
         <p class="lp-section-sub">Специално създадено за строители, майстори и ремонтни фирми в България</p>
         <div class="lp-grid">
-          <div class="lp-feat">
-            <div class="lp-feat-icon">📋</div>
-            <h3>Оферти за минути</h3>
-            <p>Калкулатор с над 300 строителни услуги — зидария, ВиК, електро, мазилки, плочки и още. Изпрати PDF директно на клиента по имейл.</p>
-          </div>
-          <div class="lp-feat">
-            <div class="lp-feat-icon">🏗️</div>
-            <h3>Управление на проекти</h3>
-            <p>Следи напредъка, задачите, документите и снимките за всеки обект. Всичко организирано на едно място.</p>
-          </div>
-          <div class="lp-feat">
-            <div class="lp-feat-icon">💰</div>
-            <h3>Плащания и разходи</h3>
-            <p>Знай точно кой е платил, кой дължи и какви са разходите ти по всеки проект. Автоматични напомняния.</p>
-          </div>
-          <div class="lp-feat">
-            <div class="lp-feat-icon">👥</div>
-            <h3>CRM за клиенти</h3>
-            <p>База данни с всички клиенти, история на проектите и контакти. Никога не губи информация за клиент.</p>
-          </div>
-          <div class="lp-feat">
-            <div class="lp-feat-icon">🌐</div>
-            <h3>Публична страница</h3>
-            <p>Безплатна онлайн визитка на твоята фирма с услуги, контакти и описание. Сподели я с клиентите.</p>
-          </div>
-          <div class="lp-feat">
-            <div class="lp-feat-icon">📱</div>
-            <h3>Работи офлайн</h3>
-            <p>Инсталирай като приложение на Android или iPhone. Работи дори без интернет на строителния обект.</p>
-          </div>
+          <div class="lp-feat"><span class="lp-feat-icon">📋</span><h3>Оферти за минути</h3><p>Калкулатор с над 300 строителни услуги — зидария, ВиК, електро, мазилки, плочки и още. Изпрати PDF директно на клиента по имейл.</p></div>
+          <div class="lp-feat"><span class="lp-feat-icon">🏗️</span><h3>Управление на проекти</h3><p>Следи напредъка, задачите, документите и снимките за всеки обект. Всичко организирано на едно място.</p></div>
+          <div class="lp-feat"><span class="lp-feat-icon">💰</span><h3>Плащания и разходи</h3><p>Знай точно кой е платил, кой дължи и какви са разходите ти по всеки проект. Автоматични напомняния.</p></div>
+          <div class="lp-feat"><span class="lp-feat-icon">👥</span><h3>CRM за клиенти</h3><p>База данни с всички клиенти, история на проектите и контакти. Никога не губи информация за клиент.</p></div>
+          <div class="lp-feat"><span class="lp-feat-icon">🌐</span><h3>Публична страница</h3><p>Безплатна онлайн визитка на твоята фирма с услуги, контакти и описание. Сподели я с клиентите.</p></div>
+          <div class="lp-feat"><span class="lp-feat-icon">📱</span><h3>Работи офлайн</h3><p>Инсталирай като приложение на Android или iPhone. Работи дори без интернет на строителния обект.</p></div>
         </div>
       </section>
 
       <!-- Как работи -->
-      <section class="lp-how">
+      <section class="lp-section">
         <h2 class="lp-section-title">Как работи</h2>
         <p class="lp-section-sub">Започни за под 2 минути</p>
         <div class="lp-steps">
-          <div class="lp-step">
-            <div class="lp-step-num">1</div>
-            <h3>Регистрирай се безплатно</h3>
-            <p>Без кредитна карта. Само имейл и парола и си вътре.</p>
-          </div>
-          <div class="lp-step">
-            <div class="lp-step-num">2</div>
-            <h3>Създай оферта</h3>
-            <p>Избери услуги от калкулатора, добави клиент и генерирай PDF оферта.</p>
-          </div>
-          <div class="lp-step">
-            <div class="lp-step-num">3</div>
-            <h3>Следи проекта</h3>
-            <p>Добави задачи, снимки, документи и следи плащанията в реално време.</p>
-          </div>
+          <div class="lp-step"><div class="lp-step-num">1</div><h3>Регистрирай се безплатно</h3><p>Без кредитна карта. Само имейл и парола и си вътре.</p></div>
+          <div class="lp-step"><div class="lp-step-num">2</div><h3>Създай оферта</h3><p>Избери услуги от калкулатора, добави клиент и генерирай PDF оферта.</p></div>
+          <div class="lp-step"><div class="lp-step-num">3</div><h3>Следи проекта</h3><p>Добави задачи, снимки, документи и следи плащанията в реално време.</p></div>
         </div>
       </section>
 
       <!-- Цени -->
-      <section class="lp-pricing" id="pricing">
+      <section class="lp-section lp-section-alt" id="lp-pricing">
         <h2 class="lp-section-title">Прости и честни цени</h2>
         <p class="lp-section-sub">Без скрити такси. Без ангажименти.</p>
         <div class="lp-plans">
@@ -287,53 +270,38 @@
             <div class="lp-plan-name">Безплатен</div>
             <div class="lp-plan-price">€0 <span>/ завинаги</span></div>
             <div class="lp-plan-items">
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Оферти (с воден знак)</div>
-              <div class="lp-plan-item"><span class="lp-check">✓</span> До 3 активни проекта</div>
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Клиенти и задачи</div>
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Работи на телефон</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Оферти (с воден знак)</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>До 3 активни проекта</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Клиенти и задачи</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Работи на телефон</div>
             </div>
           </div>
-          <div class="lp-plan lp-pro">
+          <div class="lp-plan lp-plan-pro">
             <div class="lp-pro-badge">Най-популярен</div>
             <div class="lp-plan-name">PRO</div>
             <div class="lp-plan-price">€2.99 <span>/ месец</span></div>
             <div class="lp-plan-items">
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Неограничени проекти</div>
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Оферти без воден знак</div>
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Клиентски портал онлайн</div>
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Публична страница на фирмата</div>
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Push напомняния</div>
-              <div class="lp-plan-item"><span class="lp-check">✓</span> Приоритетна поддръжка</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Неограничени проекти</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Оферти без воден знак</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Клиентски портал онлайн</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Публична страница на фирмата</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Push напомняния</div>
+              <div class="lp-plan-item"><span class="lp-check">✓</span>Приоритетна поддръжка</div>
             </div>
           </div>
         </div>
       </section>
 
       <!-- FAQ -->
-      <section class="lp-faq" id="faq">
+      <section class="lp-section" id="lp-faq">
         <h2 class="lp-section-title">Често задавани въпроси</h2>
         <p class="lp-section-sub"> </p>
         <div class="lp-faq-list">
-          <div class="lp-faq-item">
-            <div class="lp-faq-q">Какво е Maistorix?</div>
-            <div class="lp-faq-a">Maistorix е онлайн платформа за управление на строителния бизнес. Позволява на майстори и строителни фирми да създават оферти, да следят проекти, клиенти и плащания от телефона или компютъра.</div>
-          </div>
-          <div class="lp-faq-item">
-            <div class="lp-faq-q">Безплатна ли е Maistorix?</div>
-            <div class="lp-faq-a">Да, Maistorix има безплатен план без ограничение за срок. PRO планът с разширени функции се предлага за €2.99/месец или €24.99/година.</div>
-          </div>
-          <div class="lp-faq-item">
-            <div class="lp-faq-q">За кого е подходяща Maistorix?</div>
-            <div class="lp-faq-a">За всички строителни специалисти в България — ВиК майстори, електротехници, строители, бояджии, мазачи, плочкари и всички, които правят ремонти и строителни дейности.</div>
-          </div>
-          <div class="lp-faq-item">
-            <div class="lp-faq-q">Мога ли да използвам Maistorix от телефон?</div>
-            <div class="lp-faq-a">Да, Maistorix работи на всички устройства. Може да се инсталира като приложение на Android (Google Play) и iPhone без App Store. Работи и офлайн на строителния обект.</div>
-          </div>
-          <div class="lp-faq-item">
-            <div class="lp-faq-q">Как да изпратя оферта на клиент?</div>
-            <div class="lp-faq-a">Избираш услуги от калкулатора, задаваш цени и генерираш PDF оферта. Можеш да я изпратиш по имейл директно от приложението или да споделиш линк за онлайн преглед.</div>
-          </div>
+          <div class="lp-faq-item"><div class="lp-faq-q">Какво е Maistorix?</div><div class="lp-faq-a">Maistorix е онлайн платформа за управление на строителния бизнес. Позволява на майстори и строителни фирми да създават оферти, да следят проекти, клиенти и плащания от телефона или компютъра.</div></div>
+          <div class="lp-faq-item"><div class="lp-faq-q">Безплатна ли е Maistorix?</div><div class="lp-faq-a">Да, Maistorix има безплатен план без ограничение за срок. PRO планът с разширени функции се предлага за €2.99/месец или €24.99/година.</div></div>
+          <div class="lp-faq-item"><div class="lp-faq-q">За кого е подходяща Maistorix?</div><div class="lp-faq-a">За всички строителни специалисти в България — ВиК майстори, електротехници, строители, бояджии, мазачи, плочкари и всички, които правят ремонти и строителни дейности.</div></div>
+          <div class="lp-faq-item"><div class="lp-faq-q">Мога ли да използвам Maistorix от телефон?</div><div class="lp-faq-a">Да, Maistorix работи на всички устройства. Може да се инсталира като приложение на Android (Google Play) и iPhone без App Store. Работи и офлайн на строителния обект.</div></div>
+          <div class="lp-faq-item"><div class="lp-faq-q">Как да изпратя оферта на клиент?</div><div class="lp-faq-a">Избираш услуги от калкулатора, задаваш цени и генерираш PDF оферта. Можеш да я изпратиш по имейл директно от приложението или да споделиш линк за онлайн преглед.</div></div>
         </div>
       </section>
 
@@ -341,7 +309,7 @@
       <section class="lp-cta">
         <h2>Готов да опиташ?</h2>
         <p>Регистрирай се безплатно за под 30 секунди. Не се изисква кредитна карта.</p>
-        <a href="/" class="lp-btn-white" onclick="document.getElementById('seo-shell').style.display='none'">Започни безплатно сега</a>
+        <a href="/" class="lp-btn-w" onclick="document.getElementById('seo-shell').style.display='none';return false;">Започни безплатно сега</a>
       </section>
 
       <!-- Footer -->
@@ -353,7 +321,8 @@
         </div>
         <div class="lp-footer-copy">© 2026 Maistorix. Всички права запазени.</div>
       </footer>
-    </div>
+
+      </div>
     <!-- ── / SEO Landing Shell ────────────────────────────────────────── -->
 
     <script>
