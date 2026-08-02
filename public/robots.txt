@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://maistorix.com/sitemap.xml
+
+# Block internal API routes from indexing
+Disallow: /api/
