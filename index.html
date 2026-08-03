@@ -335,16 +335,19 @@
         window.dispatchEvent(new Event('pwaInstallReady'))
       })
 
-      // Скрий landing shell щом React се зареди
-      // Ако потребителят е логнат (има supabase session) — скрий веднага
+      // Скрий landing shell ако: 1) потребителят е логнат, или 2) вече е виждал landing page-а
       ;(function() {
         try {
           var keys = Object.keys(localStorage)
           var hasSession = keys.some(function(k) {
             return k.indexOf('supabase') !== -1 && k.indexOf('auth-token') !== -1
           })
-          if (hasSession) {
+          var hasSeenLP = localStorage.getItem('maistorix_lp_seen') === '1'
+          if (hasSession || hasSeenLP) {
             document.getElementById('seo-shell').style.display = 'none'
+          } else {
+            // Първо посещение — маркирай като видян
+            localStorage.setItem('maistorix_lp_seen', '1')
           }
         } catch(e) {}
       })()
