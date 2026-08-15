@@ -3,6 +3,9 @@
       "target": {
         "namespace": "android_app",
         "package_name": "com.maistorix.app",
-        "sha256_cert_fingerprints": ["21:AD:69:2A:F2:49:6F:02:19:5F:75:CC:43:C5:FD:41:4F:A8:62:76:57:5C:6C:0A:17:AF:2B:72:43:95:9E:A6"]
+        "sha256_cert_fingerprints": [
+          "65:7D:46:88:57:A7:97:67:EC:57:E5:42:FC:AB:63:1F:92:DA:40:14:84:E4:C4:61:47:FB:E7:41:0A:1D:B8:DF",
+          "21:AD:69:2A:F2:49:6F:02:19:5F:75:CC:43:C5:FD:41:4F:A8:62:76:57:5C:6C:0A:17:AF:2B:72:43:95:9E:A6"
+        ]
       }
     }]
